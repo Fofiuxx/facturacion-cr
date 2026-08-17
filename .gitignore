@@ -1,0 +1,35 @@
+# Reglas de todo el monorepo. Cada paquete añade las suyas encima.
+
+node_modules/
+
+# Nada que pueda firmar o identificar entra al repositorio.
+*.key
+*.pem
+*.p12
+*.pfx
+certs/
+
+# Bases de datos y sus respaldos comprimidos.
+*.db
+*.db-wal
+*.db-shm
+*.gz
+respaldos/
+
+# Salidas de prueba
+salida-*.xml
+*.log
+
+.env
+.env.*
+!.env.example
+
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Volcados de impresion: se regeneran corriendo las pruebas.
+packages/impresion/impresiones/
+packages/impresion/tiquete.bin
+packages/impresion/tiquete.txt

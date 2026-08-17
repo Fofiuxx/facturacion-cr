@@ -1,0 +1,2320 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>POS restaurante — prototipo</title>
+
+<style>
+  :root {
+    --ink:        #151E1B;
+    --paper:      #FFFFFF;
+    --ground:     #F2F4F1;
+    --raise:      #FFFFFF;
+    --line:       #DFE4DF;
+    --line-soft:  #EAEEE9;
+    --muted:      #6E7A74;
+    --dim:        #96A099;
+    --jade:       #0E6E52;
+    --jade-ink:   #FFFFFF;
+    --jade-soft:  #E3F0EA;
+    --amber:      #96590C;
+    --amber-soft: #F8EEDC;
+    --clay:       #9E3A2C;
+    --clay-soft:  #F7E7E4;
+
+    --ui: system-ui, -apple-system, "Segoe UI Variable Text", "Segoe UI", Roboto, sans-serif;
+    --num: ui-monospace, "Cascadia Mono", "SF Mono", Consolas, monospace;
+    --r: 10px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink: #ECF1EE; --paper: #121816; --ground: #0D1211; --raise: #1A2220;
+      --line: #2A3431; --line-soft: #212B28; --muted: #96A29C; --dim: #6B7772;
+      --jade: #35A17C; --jade-ink: #06110C; --jade-soft: #163026;
+      --amber: #D9A254; --amber-soft: #2E2617; --clay: #D98676; --clay-soft: #331E1A;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink: #ECF1EE; --paper: #121816; --ground: #0D1211; --raise: #1A2220;
+    --line: #2A3431; --line-soft: #212B28; --muted: #96A29C; --dim: #6B7772;
+    --jade: #35A17C; --jade-ink: #06110C; --jade-soft: #163026;
+    --amber: #D9A254; --amber-soft: #2E2617; --clay: #D98676; --clay-soft: #331E1A;
+  }
+  :root[data-theme="light"] {
+    --ink: #151E1B; --paper: #FFFFFF; --ground: #F2F4F1; --raise: #FFFFFF;
+    --line: #DFE4DF; --line-soft: #EAEEE9; --muted: #6E7A74; --dim: #96A099;
+    --jade: #0E6E52; --jade-ink: #FFFFFF; --jade-soft: #E3F0EA;
+    --amber: #96590C; --amber-soft: #F8EEDC; --clay: #9E3A2C; --clay-soft: #F7E7E4;
+  }
+
+  .pg { background: var(--ground); color: var(--ink); font-family: var(--ui); line-height: 1.6; padding: 3rem 1.5rem 5rem; }
+  .wrap { max-width: 1040px; margin: 0 auto; display: flex; flex-direction: column; gap: 2.5rem; }
+
+  .eyebrow { font-size: 11px; letter-spacing: .13em; text-transform: uppercase; color: var(--muted); margin: 0 0 .7rem; }
+  .lede { max-width: 64ch; display: flex; flex-direction: column; gap: .9rem; }
+  .lede h1 { font-size: clamp(1.7rem, 3.4vw, 2.3rem); font-weight: 500; letter-spacing: -.02em; margin: 0; text-wrap: balance; line-height: 1.2; }
+  .lede p { margin: 0; color: var(--muted); font-size: 15px; }
+
+  .slab { background: var(--raise); border: 1px solid var(--line); border-radius: 16px; padding: 12px; }
+  .dev { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; min-height: 520px; display: flex; flex-direction: column; }
+
+  .nav { display: flex; align-items: center; gap: 4px; padding: 8px 10px; border-bottom: 1px solid var(--line-soft); flex-wrap: wrap; }
+  .navbtn { font: inherit; font-size: 13px; padding: 0 16px; min-height: 44px; border: 1px solid transparent; border-radius: 999px; background: none; color: var(--muted); cursor: pointer; }
+  .navbtn:hover { color: var(--ink); }
+  .navbtn[aria-current="true"] { background: var(--ink); color: var(--paper); }
+  .navsep { width: 1px; align-self: stretch; background: var(--line); margin: 4px 8px; }
+  .navrol { font: inherit; font-size: 12px; min-height: 36px; padding: 0 10px; border: 1px solid var(--line);
+            border-radius: 999px; background: var(--paper); color: var(--muted); cursor: pointer; flex: none; }
+  .navrol:hover { border-color: var(--dim); color: var(--ink); }
+  .navlab { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--dim); padding-right: 4px; }
+
+  .view { flex: 1; display: flex; flex-direction: column; }
+  .bar { display: flex; align-items: center; gap: 12px; padding: 13px 16px; border-bottom: 1px solid var(--line-soft); }
+  .bar-t { font-size: 15px; font-weight: 500; }
+  .bar-s { font-size: 12px; color: var(--dim); }
+  .grow { flex: 1; }
+  .chip { font-size: 11px; padding: 4px 10px; border-radius: 999px; background: var(--ground); color: var(--muted); border: 1px solid var(--line-soft); }
+  .chip-live { border-color: var(--amber); color: var(--amber); background: var(--amber-soft); }
+  .chip-ok { border-color: var(--jade); color: var(--jade); background: var(--jade-soft); }
+
+  .hollow { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 48px 24px; text-align: center; }
+  .hollow p { margin: 0; color: var(--muted); font-size: 14px; max-width: 40ch; }
+  .hollow h3 { margin: 0; font-size: 16px; font-weight: 500; }
+
+  .mesas { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; padding: 16px; }
+  .mesa { font: inherit; text-align: left; border: 1px solid var(--line); border-radius: var(--r); padding: 12px 13px; display: flex; flex-direction: column; gap: 5px; min-height: 88px; background: var(--paper); color: var(--ink); cursor: pointer; transition: border-color .12s; }
+  .mesa:hover { border-color: var(--jade); }
+  .mesa-n { font-size: 15px; font-weight: 500; }
+  .mesa-st { font-size: 11px; display: flex; align-items: center; gap: 6px; color: var(--muted); }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none; }
+  .mesa-m { font-family: var(--num); font-variant-numeric: tabular-nums; font-size: 13px; margin-top: auto; }
+  .is-libre { background: var(--ground); border-style: dashed; }
+  .is-libre .mesa-n, .is-libre .mesa-st { color: var(--dim); }
+  .is-cobrar { border-color: var(--amber); }
+  .is-cobrar .mesa-st { color: var(--amber); }
+  .is-ocupada .mesa-st { color: var(--jade); }
+
+  .toast { display: flex; align-items: center; gap: 10px; margin: 12px 16px 0; padding: 10px 14px; border-radius: var(--r); border: 1px solid var(--jade); background: var(--jade-soft); font-size: 13px; color: var(--ink); }
+  .toast .k { font-family: var(--num); font-variant-numeric: tabular-nums; }
+
+  .split { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); flex: 1; }
+  .left { border-right: 1px solid var(--line-soft); padding: 16px; }
+  .right { padding: 16px; display: flex; flex-direction: column; min-height: 340px; }
+
+  .cats { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+  .cat { font: inherit; font-size: 13px; padding: 7px 14px; border-radius: 999px; border: 1px solid transparent; background: none; color: var(--muted); cursor: pointer; }
+  .cat:hover { color: var(--ink); }
+  .cat[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+
+  .navbtn:focus-visible, .cat:focus-visible, .tile:focus-visible, .pay:focus-visible,
+  .cta:focus-visible, .tog:focus-visible, .mini:focus-visible, .ghost:focus-visible,
+  .mesa:focus-visible, .exp:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--jade); outline-offset: 2px; }
+
+  .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+  .tile { font: inherit; text-align: left; background: var(--paper); border: 1px solid var(--line); border-radius: var(--r); padding: 12px 13px; min-height: 66px; cursor: pointer; display: flex; flex-direction: column; gap: 4px; color: var(--ink); transition: border-color .12s, background .12s; }
+  .tile:hover { border-color: var(--jade); background: var(--jade-soft); }
+  .tile:active { transform: scale(.985); }
+  .tile-n { font-size: 13px; line-height: 1.35; }
+  .tile-p { font-family: var(--num); font-variant-numeric: tabular-nums; font-size: 12px; color: var(--muted); }
+
+  .lines { flex: 1; display: flex; flex-direction: column; }
+  .ln { display: flex; gap: 10px; align-items: center; font-size: 13px; }
+  .ln-q { font-family: var(--num); color: var(--muted); min-width: 18px; }
+  .ln-d { flex: 1; }
+  .ln-m { font-family: var(--num); font-variant-numeric: tabular-nums; color: var(--muted); }
+  .empty { color: var(--dim); font-size: 13px; margin: 0; }
+
+  .iconbtn { font: inherit; font-size: 16px; line-height: 1; min-width: 44px; min-height: 44px; flex: none;
+             display: inline-flex; align-items: center; justify-content: center; border: none; background: none;
+             color: var(--dim); cursor: pointer; border-radius: 8px; }
+  .iconbtn:hover { color: var(--clay); background: var(--clay-soft); }
+  .iconbtn-back { font-size: 24px; margin-left: -8px; }
+  .iconbtn-back:hover { color: var(--ink); background: var(--ground); }
+
+  .tot { border-top: 1px solid var(--line-soft); padding-top: 11px; margin-top: 12px; display: flex; flex-direction: column; gap: 5px; }
+  .row { display: flex; justify-content: space-between; font-size: 12px; color: var(--dim); }
+  .row span:last-child { font-family: var(--num); font-variant-numeric: tabular-nums; }
+  .big { display: flex; justify-content: space-between; align-items: baseline; margin-top: 6px; }
+  .big-l { font-size: 13px; }
+  .big-v { font-family: var(--num); font-variant-numeric: tabular-nums; font-size: 26px; font-weight: 500; letter-spacing: -.02em; }
+
+  .cta { font: inherit; font-size: 14px; padding: 13px 20px; border: none; border-radius: var(--r); background: var(--jade); color: var(--jade-ink); cursor: pointer; }
+  .cta:hover { filter: brightness(1.08); }
+  .cta[disabled] { background: var(--line); color: var(--dim); cursor: default; filter: none; }
+  .cta-full { width: 100%; margin-top: 12px; }
+  .ghost { font: inherit; font-size: 13px; padding: 9px 16px; border: 1px solid var(--line); border-radius: var(--r); background: none; color: var(--ink); cursor: pointer; }
+  .ghost:hover { border-color: var(--dim); }
+
+  .exps { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; padding: 16px; }
+  .exp { font: inherit; text-align: left; border: 1px solid var(--line); border-radius: var(--r); padding: 13px 14px; background: var(--paper); color: var(--ink); cursor: pointer; display: flex; flex-direction: column; gap: 5px; min-height: 92px; transition: border-color .12s; }
+  .exp:hover { border-color: var(--jade); }
+  .exp-n { font-size: 15px; font-weight: 500; }
+  .exp-s { font-size: 11px; color: var(--jade); display: flex; align-items: center; gap: 6px; }
+  .exp-m { font-family: var(--num); font-variant-numeric: tabular-nums; font-size: 13px; margin-top: auto; }
+  .exp-new { border-style: dashed; align-items: center; justify-content: center; text-align: center; color: var(--jade); }
+
+  .panel { padding: 18px 16px; display: flex; flex-direction: column; gap: 16px; flex: 1; }
+  .panel-h h3 { margin: 0; font-size: 15px; font-weight: 500; }
+  .panel-h p { margin: 3px 0 0; font-size: 13px; color: var(--muted); max-width: 52ch; }
+  .opts-list { display: flex; flex-direction: column; gap: 8px; max-width: 440px; }
+  .opt { font: inherit; text-align: left; padding: 13px 16px; min-height: 56px; border: 1px solid var(--line); border-radius: var(--r); background: var(--paper); color: var(--ink); cursor: pointer; display: flex; flex-direction: column; gap: 2px; }
+  .opt:hover { border-color: var(--jade); }
+  .opt .lab { font-size: 14px; }
+  .opt .sub { font-size: 12px; color: var(--muted); }
+  .opt-danger:hover { border-color: var(--clay); background: var(--clay-soft); }
+  .opt-danger .lab { color: var(--clay); }
+
+  .dests { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 8px; }
+  .dest { font: inherit; text-align: left; min-height: 68px; border: 1px solid var(--line); border-radius: var(--r); background: var(--paper); color: var(--ink); cursor: pointer; padding: 11px 12px; display: flex; flex-direction: column; gap: 3px; }
+  .dest:hover { border-color: var(--jade); }
+  .dest-n { font-size: 14px; font-weight: 500; }
+  .dest-s { font-size: 11px; color: var(--dim); }
+  .dest-merge { border-style: dashed; }
+  .dest-merge .dest-s { color: var(--amber); }
+
+  .cbx { display: flex; flex-direction: column; gap: 7px; }
+  .cbx input { font: inherit; font-size: 13px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); color: var(--ink); width: 100%; box-sizing: border-box; }
+  .cbx input:hover { border-color: var(--dim); }
+  .cbx-res { display: flex; flex-direction: column; gap: 4px; max-height: 210px; overflow-y: auto; }
+  .cbx-it { font: inherit; text-align: left; display: flex; gap: 12px; align-items: baseline; min-height: 46px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); color: var(--ink); cursor: pointer; }
+  .cbx-it:hover { border-color: var(--jade); background: var(--jade-soft); }
+  .cbx-it .cd { font-family: var(--num); font-size: 12px; color: var(--muted); flex: none; }
+  .cbx-it .ds { flex: 1; font-size: 13px; }
+  .cbx-it .tf { font-size: 11px; flex: none; padding: 2px 8px; border-radius: 999px; background: var(--ground); color: var(--muted); }
+  .cbx-sel { border: 1px solid var(--jade); background: var(--jade-soft); border-radius: 8px; padding: 11px 13px; display: flex; flex-direction: column; gap: 3px; }
+  .cbx-sel .cd { font-family: var(--num); font-size: 12px; color: var(--muted); }
+  .cbx-sel .ds { font-size: 13px; }
+  .cbx-sel .tf { font-size: 12px; color: var(--jade); }
+  .cbx-none { font-size: 12px; color: var(--dim); }
+
+  .lookup { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; }
+  .lookup .f { flex: 1; min-width: 190px; }
+  .lookup input { font-family: var(--num); font-variant-numeric: tabular-nums; font-size: 16px; letter-spacing: .04em; }
+  .found { border: 1px solid var(--jade); background: var(--jade-soft); border-radius: var(--r); padding: 13px 15px; display: flex; flex-direction: column; gap: 3px; }
+  .found .nm { font-size: 15px; font-weight: 500; }
+  .found .id { font-size: 12px; color: var(--muted); font-family: var(--num); }
+  .notfound { border: 1px solid var(--amber); background: var(--amber-soft); border-radius: var(--r); padding: 13px 15px; font-size: 13px; }
+  .acts-list { display: flex; flex-direction: column; gap: 6px; }
+  .actv { font: inherit; text-align: left; font-size: 13px; min-height: 48px; padding: 10px 14px; border: 1px solid var(--line); border-radius: var(--r); background: var(--paper); color: var(--ink); cursor: pointer; }
+  .actv:hover { border-color: var(--jade); }
+  .actv[aria-pressed="true"] { border-color: var(--jade); background: var(--jade-soft); }
+  .actv .cod { font-family: var(--num); color: var(--muted); margin-right: 8px; }
+  .freqs { display: flex; flex-wrap: wrap; gap: 8px; }
+  .freq { font: inherit; font-size: 13px; min-height: 44px; padding: 0 15px; border: 1px solid var(--line); border-radius: 999px; background: none; color: var(--ink); cursor: pointer; }
+  .freq:hover { border-color: var(--jade); }
+  .sum { border: 1px solid var(--jade); background: var(--jade-soft); border-radius: var(--r); padding: 12px 15px; display: flex; gap: 12px; align-items: center; max-width: 460px; margin: 0 auto; width: 100%; box-sizing: border-box; }
+  .sum-b { min-width: 0; flex: 1; }
+  .sum .nm { font-size: 14px; font-weight: 500; }
+  .sum .dt { font-size: 12px; color: var(--muted); }
+  .lbl { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+
+  .motivos { display: flex; flex-wrap: wrap; gap: 8px; }
+  .motivo { font: inherit; font-size: 13px; min-height: 44px; padding: 0 16px; border: 1px solid var(--line); border-radius: 999px; background: none; color: var(--muted); cursor: pointer; }
+  .motivo:hover { color: var(--ink); border-color: var(--dim); }
+  .motivo[aria-pressed="true"] { border-color: var(--clay); color: var(--clay); background: var(--clay-soft); }
+  .cta-danger { background: var(--clay); color: #fff; }
+  .toast-warn { border-color: var(--amber); background: var(--amber-soft); }
+
+  .cobro { padding: 22px 16px; display: flex; flex-direction: column; gap: 18px; flex: 1; }
+  .cobro-top { text-align: center; display: flex; flex-direction: column; gap: 3px; }
+  .cobro-top .k { font-size: 12px; color: var(--dim); }
+  .cobro-top .v { font-family: var(--num); font-variant-numeric: tabular-nums; font-size: 40px; font-weight: 500; letter-spacing: -.03em; }
+  .pays { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; }
+  .pay { font: inherit; font-size: 13px; padding: 16px 12px; border: 1px solid var(--line); border-radius: var(--r); background: var(--paper); color: var(--ink); cursor: pointer; }
+  .pay:hover { border-color: var(--jade); }
+  .pay[aria-pressed="true"] { border-color: var(--jade); background: var(--jade-soft); color: var(--jade); }
+  .secs { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  .tog { font: inherit; font-size: 12px; padding: 8px 14px; border: 1px solid var(--line); border-radius: 999px; background: none; color: var(--muted); cursor: pointer; }
+  .tog:hover { color: var(--ink); border-color: var(--dim); }
+  .tog[aria-pressed="true"] { border-color: var(--jade); color: var(--jade); background: var(--jade-soft); }
+  .breakdown { max-width: 320px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 5px; }
+
+  .adm { padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+  .adm-top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  .adm-top .count { font-size: 13px; color: var(--muted); }
+  .form { border: 1px solid var(--jade); border-radius: var(--r); padding: 16px; display: flex; flex-direction: column; gap: 14px; background: var(--paper); }
+  .form-h { font-size: 14px; font-weight: 500; margin: 0; }
+  .fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+  .f { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+  .f label { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  .f input, .f select { font: inherit; font-size: 13px; padding: 9px 11px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); color: var(--ink); width: 100%; box-sizing: border-box; }
+  .f input:hover, .f select:hover { border-color: var(--dim); }
+  .f .hint { font-size: 11px; color: var(--dim); }
+  .f-mono input { font-family: var(--num); font-variant-numeric: tabular-nums; }
+  .form-act { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .err { font-size: 12px; color: var(--clay); margin: 0; }
+
+  .tbl-wrap { overflow-x: auto; }
+  .tbl { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 660px; }
+  .tbl th { text-align: left; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 400; padding: 0 10px 8px; border-bottom: 1px solid var(--line); }
+  .tbl td { padding: 11px 10px; border-bottom: 1px solid var(--line-soft); vertical-align: middle; }
+  .tbl .n { font-family: var(--num); font-variant-numeric: tabular-nums; text-align: right; }
+  .tbl .c { font-family: var(--num); font-size: 12px; color: var(--muted); }
+  .tbl tr.off td { color: var(--dim); }
+  .acts { display: flex; gap: 6px; justify-content: flex-end; }
+  .mini { font: inherit; font-size: 12px; padding: 5px 10px; border: 1px solid var(--line); border-radius: 7px; background: none; color: var(--muted); cursor: pointer; white-space: nowrap; }
+  .mini:hover { color: var(--ink); border-color: var(--dim); }
+  .mini-del:hover { color: var(--clay); border-color: var(--clay); }
+  .confirm { display: flex; gap: 8px; align-items: center; justify-content: flex-end; font-size: 12px; color: var(--clay); }
+  .mini-yes { border-color: var(--clay); color: var(--clay); }
+
+  .subnav { display: flex; gap: 4px; padding: 10px 16px 0; flex-wrap: wrap; }
+  .subbtn { font: inherit; font-size: 13px; min-height: 38px; padding: 0 13px; border: 1px solid transparent; border-radius: 8px; background: none; color: var(--muted); cursor: pointer; }
+  .subbtn:hover { color: var(--ink); }
+  .subbtn[aria-current="true"] { background: var(--ground); color: var(--ink); border-color: var(--line); }
+
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+  .kpi { background: var(--ground); border-radius: var(--r); padding: 13px 15px; display: flex; flex-direction: column; gap: 3px; }
+  .kpi .k { font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+  .kpi .v { font-family: var(--num); font-variant-numeric: tabular-nums; font-size: 21px; font-weight: 500; letter-spacing: -.02em; }
+  .kpi .s { font-size: 11px; color: var(--dim); }
+  .kpi-warn { background: var(--amber-soft); }
+  .kpi-warn .v, .kpi-warn .k { color: var(--amber); }
+  .kpi-bad { background: var(--clay-soft); }
+  .kpi-bad .v, .kpi-bad .k { color: var(--clay); }
+
+  .sec { display: flex; flex-direction: column; gap: 10px; }
+  .sec > .lbl { margin-bottom: -2px; }
+
+  .est { font-size: 11px; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+  .est-ok { background: var(--jade-soft); color: var(--jade); }
+  .est-live { background: var(--amber-soft); color: var(--amber); }
+  .est-bad { background: var(--clay-soft); color: var(--clay); }
+  .est-wait { background: var(--ground); color: var(--muted); border: 1px solid var(--line); }
+
+  .netchip { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; padding: 4px 10px; border-radius: 999px; flex: none; }
+  .net-ok { background: var(--jade-soft); color: var(--jade); }
+  .net-off { background: var(--amber-soft); color: var(--amber); }
+
+  .sim { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; padding: 12px 14px;
+         border: 1px dashed var(--line); border-radius: 12px; }
+  .sim .lb { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--dim); margin-right: 4px; }
+  .simb { font: inherit; font-size: 12px; min-height: 38px; padding: 0 14px; border: 1px solid var(--line);
+          border-radius: 999px; background: var(--paper); color: var(--muted); cursor: pointer; }
+  .simb:hover { border-color: var(--dim); color: var(--ink); }
+  .simb[aria-pressed="true"] { border-color: var(--ink); background: var(--ink); color: var(--paper); }
+  .sim .nota { font-size: 12px; color: var(--dim); flex-basis: 100%; }
+
+  .det { font-family: var(--num); font-size: 11px; color: var(--muted); word-break: break-all; line-height: 1.5; }
+  .arq { display: flex; flex-direction: column; gap: 10px; max-width: 430px; }
+  .arq-row { display: flex; justify-content: space-between; font-size: 13px; }
+  .arq-row span:last-child { font-family: var(--num); font-variant-numeric: tabular-nums; }
+  .arq-tot { border-top: 1px solid var(--line); padding-top: 10px; font-size: 14px; }
+  .dif-ok { color: var(--jade); }
+  .dif-bad { color: var(--clay); }
+
+  .barlist { display: flex; flex-direction: column; gap: 8px; }
+  .barrow { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+  .barrow .nm { min-width: 120px; }
+  .barrow .tr { flex: 1; height: 8px; background: var(--ground); border-radius: 999px; overflow: hidden; }
+  .barrow .fl { height: 100%; background: var(--jade); border-radius: 999px; }
+  .barrow .vl { font-family: var(--num); font-variant-numeric: tabular-nums; min-width: 74px; text-align: right; color: var(--muted); }
+
+  .warn { display: flex; gap: 10px; align-items: flex-start; border: 1px solid var(--amber); background: var(--amber-soft); border-radius: var(--r); padding: 12px 14px; font-size: 13px; }
+  .warn b { font-weight: 500; }
+
+  .notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .note { background: var(--raise); padding: 1.1rem 1.2rem; display: flex; flex-direction: column; gap: .4rem; }
+  .note h3 { font-size: 13px; font-weight: 500; margin: 0; }
+  .note p { font-size: 13px; color: var(--muted); margin: 0; }
+
+  .foot { border-top: 1px solid var(--line); padding-top: 1.3rem; font-size: 13px; color: var(--muted); max-width: 64ch; }
+  .foot strong { font-weight: 500; color: var(--ink); }
+
+  .mbar { display: none; }
+  .mback { display: none; }
+
+  @media (min-width: 760px) {
+    .mbar, .mback { display: none !important; }
+  }
+
+  @media (max-width: 759px) {
+    .pg { padding: 1.5rem 0.75rem 3rem; }
+    .slab { padding: 0; border: none; background: none; border-radius: 0; }
+    .dev { min-height: 0; }
+    .wrap { gap: 2rem; }
+
+    .nav { flex-wrap: nowrap; overflow-x: auto; padding: 6px 8px; gap: 2px; }
+    .navbtn { flex: none; padding: 0 13px; }
+    .navsep, .navlab { display: none; }
+
+    .mesas { grid-template-columns: repeat(auto-fill, minmax(108px, 1fr)); gap: 8px; padding: 12px; }
+    .mesa { min-height: 78px; padding: 10px 11px; }
+    .exps { grid-template-columns: 1fr; padding: 12px; }
+
+    .split { grid-template-columns: 1fr; }
+    .left { border-right: none; padding: 12px; }
+    .right { padding: 12px; min-height: 0; }
+    .tiles { grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); }
+
+    .split .right { display: none; }
+    .split.ver .right { display: flex; }
+    .split.ver .left { display: none; }
+
+    .mbar { display: flex; align-items: center; gap: 10px; width: 100%; margin-top: 12px;
+            min-height: 56px; padding: 0 16px; border: none; border-radius: var(--r);
+            background: var(--jade); color: var(--jade-ink); font: inherit; font-size: 14px; cursor: pointer; }
+    .mbar[disabled] { background: var(--line); color: var(--dim); cursor: default; }
+    .mbar .n { font-family: var(--num); font-variant-numeric: tabular-nums; }
+    .mbar .grow { flex: 1; }
+
+    .mback { display: inline-flex; align-items: center; min-height: 44px; padding: 0 4px;
+             border: none; background: none; color: var(--muted); font: inherit; font-size: 13px;
+             cursor: pointer; margin-bottom: 8px; }
+
+    .cobro { padding: 16px 12px; }
+    .cobro-top .v { font-size: 32px; }
+    .pays { grid-template-columns: 1fr; }
+    .panel { padding: 14px 12px; }
+    .adm { padding: 12px; }
+    .lede h1 { font-size: 1.5rem; }
+    .notes { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+    .tile:active { transform: none; }
+  }
+</style>
+
+<div class="pg">
+  <div class="wrap">
+
+    <header class="lede">
+      <p class="eyebrow">Facturación electrónica CR 4.4 · vertical restaurante</p>
+      <h1>Prototipo navegable</h1>
+      <p>El salonero toma en el teléfono, la caja cobra en la computadora, y los dos ven lo mismo. Cambiá el dispositivo con el selector de la derecha para ver cómo cambian las ventanas disponibles.</p>
+      <p><strong>Para ver la sincronización:</strong> abrí esta misma página en dos ventanas, poné una como <em>Salonero</em> y otra como <em>Caja</em>, y tomá un pedido en la primera. Aparece en la segunda sin recargar.</p>
+    </header>
+
+    <div>
+      <div class="slab">
+        <div class="dev">
+          <nav class="nav" id="nav" aria-label="Ventanas"></nav>
+          <div class="view" id="view"></div>
+        </div>
+      </div>
+      <div class="sim" id="sim" aria-label="Simulador de red"></div>
+    </div>
+
+    <section class="notes">
+      <div class="note">
+        <h3>Hacienda va por detrás</h3>
+        <p>Al cobrar, el tiquete sale al instante y el envío al fisco corre solo. La pastilla del salón lo muestra pasar de enviando a aceptado.</p>
+      </div>
+      <div class="note">
+        <h3>Express no ocupa mesa</h3>
+        <p>Una orden para llevar es la misma orden sin mesa asignada. Mismo flujo, mismo comprobante, sin bloquear el salón.</p>
+      </div>
+      <div class="note">
+        <h3>El precio se congela</h3>
+        <p>Si subís el precio de un plato ya pedido, la comanda abierta no cambia. La línea guarda el precio del momento en que se pidió.</p>
+      </div>
+      <div class="note">
+        <h3>Desactivar, no borrar</h3>
+        <p>Un plato fuera de temporada se desactiva: sale del POS pero sigue en los comprobantes viejos. Borrar es para lo que nunca se vendió.</p>
+      </div>
+    </section>
+
+    <p class="foot"><strong>Pendiente de confirmar con contador.</strong> El IVA se calcula aquí sobre el subtotal de productos, con el servicio 10% aparte y solo en mesas. La base imponible exacta cuando hay servicio de ley, y el tratamiento de la propina voluntaria, hay que fijarlos por escrito antes de programar el cálculo.</p>
+
+  </div>
+</div>
+
+<script>
+  var KEY = "pos-cr-v4";
+  var KEY_ROL = "pos-cr-rol";
+  var CAMPOS = ["menu", "ordenes", "clientes", "nextOrden", "nextExpress", "nextMenuId",
+                "comprobantes", "nextComp", "turno", "usuarios", "nextUsuario", "cert", "red"];
+
+  // El servidor vive en el local. Perder internet corta a Hacienda, no a los dispositivos.
+  var REDES = [
+    { id: "ok",        txt: "En línea",        sit: "1", desc: "Todo normal." },
+    { id: "sinNet",    txt: "Sin internet",    sit: "3", desc: "Los dispositivos se siguen viendo por el WiFi del local. Solo Hacienda queda fuera de alcance." },
+    { id: "hacienda",  txt: "Hacienda caído",  sit: "2", desc: "Hay internet, pero la API del fisco no responde. Se emite en contingencia." }
+  ];
+  function redActual() {
+    for (var i = 0; i < REDES.length; i++) { if (REDES[i].id === S.red) return REDES[i]; }
+    return REDES[0];
+  }
+
+  var ADMIN = [
+    { id: "menu",         lab: "Menú" },
+    { id: "cierre",       lab: "Cierre de caja" },
+    { id: "reportes",     lab: "Reportes" },
+    { id: "comprobantes", lab: "Comprobantes" },
+    { id: "ajustes",      lab: "Ajustes" }
+  ];
+  var IDS_ADMIN = ADMIN.map(function (a) { return a.id; });
+
+  var ROLES = [
+    { id: "salonero", txt: "Salonero",       sub: "teléfono o tableta", views: ["salon", "express", "pedido"] },
+    { id: "caja",     txt: "Caja",           sub: "computadora",        views: ["salon", "express", "pedido", "pago"] },
+    { id: "admin",    txt: "Administración", sub: "computadora",        views: ["salon", "express", "pedido", "pago"].concat(IDS_ADMIN) }
+  ];
+
+  var CEDULA_EMISOR = "3101456789";
+
+  function pad(n, l) { var s = String(n); while (s.length < l) s = "0" + s; return s; }
+
+  function consecutivoDe(tipo, n) {
+    return "001" + "00001" + (tipo === "FE" ? "01" : "04") + pad(n, 10);
+  }
+
+  function claveDe(cons, fecha, sit) {
+    var d = new Date(fecha);
+    var f = pad(d.getDate(), 2) + pad(d.getMonth() + 1, 2) + pad(d.getFullYear() % 100, 2);
+    return "506" + f + pad(CEDULA_EMISOR, 12) + cons + (sit || "1") + pad(Math.floor(Math.random() * 1e8), 8);
+  }
+
+  function hora(ts) {
+    var d = new Date(ts);
+    return pad(d.getHours(), 2) + ":" + pad(d.getMinutes(), 2);
+  }
+  function dias(ts) { return Math.round((ts - Date.now()) / 86400000); }
+  var TARIFAS = [
+    { tarifa: 13, txt: "13% general" },
+    { tarifa: 4,  txt: "4% reducida" },
+    { tarifa: 2,  txt: "2% reducida" },
+    { tarifa: 1,  txt: "1% reducida" },
+    { tarifa: 0,  txt: "Exento" }
+  ];
+  var MESAS = ["1","2","3","4","5","6","7","8","T1","T2"];
+  var MOTIVOS = ["Cliente se retiró", "Error al tomar la orden", "Producto agotado", "Orden duplicada"];
+
+  var TIPOS_ID = [
+    { cod: "01", txt: "Cédula física" },
+    { cod: "02", txt: "Cédula jurídica" },
+    { cod: "03", txt: "DIMEX" },
+    { cod: "04", txt: "NITE" },
+    { cod: "05", txt: "Extranjero no domiciliado" },
+    { cod: "06", txt: "No contribuyente" }
+  ];
+
+  var CABYS = [
+    ["6311100000000", "Servicio de comidas preparadas en restaurante", 13],
+    ["6311100000100", "Servicio de comidas para llevar", 13],
+    ["6311200000000", "Servicio de bebidas no alcohólicas en restaurante", 13],
+    ["6311200000100", "Servicio de bebidas alcohólicas en restaurante", 13],
+    ["6311300000000", "Servicio de postres y repostería en restaurante", 13],
+    ["0112100000000", "Arroz sin elaborar", 1],
+    ["0141200000000", "Frijol negro", 1],
+    ["2211100000000", "Leche fluida pasteurizada", 1],
+    ["2313100000000", "Pan corriente", 1],
+    ["2110100000000", "Carne de res fresca", 1],
+    ["9312100000000", "Servicios de salud humana privados", 4],
+    ["3520100000000", "Medicamentos de uso humano", 2],
+    ["8511100000000", "Servicios de educación preescolar", 0],
+    ["6810100000000", "Alquiler de local comercial", 13]
+  ];
+
+  var PADRON = {
+    "3101123456": { nombre: "Comercializadora del Valle S.A.", tipo: "02", acts: [["721101","Venta al por mayor de alimentos"],["620100","Programación informática"]] },
+    "3102987654": { nombre: "Constructora Pacífico Sur S.A.", tipo: "02", acts: [["410100","Construcción de edificios"]] },
+    "112340567":  { nombre: "María Jiménez Rojas",            tipo: "01", acts: [["962004","Servicios de peluquería"]] },
+    "108760543":  { nombre: "Carlos Ramírez Solís",           tipo: "01", acts: [["691001","Servicios jurídicos"],["702001","Consultoría de gestión"]] },
+    "205670891":  { nombre: "Ana Vargas Mora",                tipo: "01", acts: [] }
+  };
+  var SEED_MENU = [
+    ["Casado de pollo",   "Platos",  5900, "6311100000000", 13],
+    ["Casado de pescado", "Platos",  7200, "6311100000000", 13],
+    ["Ceviche",           "Platos",  4500, "6311100000000", 13],
+    ["Chifrijo",          "Platos",  4900, "6311100000000", 13],
+    ["Olla de carne",     "Platos",  6800, "6311100000000", 13],
+    ["Gallo pinto",       "Platos",  3200, "6311100000000", 13],
+    ["Refresco natural",  "Bebidas", 1500, "6311200000000", 13],
+    ["Café chorreado",    "Bebidas", 1200, "6311200000000", 13],
+    ["Agua embotellada",  "Bebidas",  900, "6311200000000", 13],
+    ["Fresco de cas",     "Bebidas", 1600, "6311200000000", 13],
+    ["Tres leches",       "Postres", 2800, "6311300000000", 13],
+    ["Flan de coco",      "Postres", 2400, "6311300000000", 13],
+    ["Imperial",          "Bar",     2200, "6311200000100", 13],
+    ["Guaro sour",        "Bar",     3500, "6311200000100", 13],
+    ["Patacones",         "Bocas",   3400, "6311100000000", 13],
+    ["Chicharrones",      "Bocas",   3900, "6311100000000", 13]
+  ];
+
+  var S = {};
+
+  function crc(n) {
+    return "₡" + String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  }
+  function mins(ts) { return Math.max(0, Math.round((Date.now() - ts) / 60000)); }
+  function find(id) {
+    for (var i = 0; i < S.ordenes.length; i++) { if (S.ordenes[i].id === id) return S.ordenes[i]; }
+    return null;
+  }
+  function ordenDeMesa(m) {
+    for (var i = 0; i < S.ordenes.length; i++) { if (S.ordenes[i].mesa === m) return S.ordenes[i]; }
+    return null;
+  }
+  function titulo(o) { return o.mesa ? "Mesa " + o.mesa : "Express #" + o.num; }
+
+  function totales(o) {
+    var sub = 0, iva = 0;
+    o.lineas.forEach(function (l) {
+      var m = l.precio * l.qty;
+      sub += m;
+      iva += m * (l.iva / 100);
+    });
+    var svc = o.mesa ? sub * 0.10 : 0;
+    return { sub: sub, iva: iva, svc: svc, total: sub + iva + svc };
+  }
+
+  function seedLocal() {
+    var rol = "caja";
+    try { rol = sessionStorage.getItem(KEY_ROL) || "caja"; } catch (e) {}
+    S.rol = rol;
+    S.view = "salon";
+    S.activa = null; S.cat = null; S.editing = null; S.confirming = null;
+    S.pago = "Efectivo"; S.opts = {}; S.panel = null; S.motivo = null;
+    S.aviso = null; S.receptor = null; S.busca = ""; S.hallado = null;
+    S.manual = false; S.verComanda = false;
+    S.compSel = null; S.usrNuevo = false; S.declarado = null;
+  }
+
+  function seed() {
+    seedLocal();
+    S.menu = SEED_MENU.map(function (s, i) {
+      return { id: i + 1, nombre: s[0], cat: s[1], precio: s[2], cabys: s[3], iva: s[4], activo: true };
+    });
+    S.nextMenuId = SEED_MENU.length + 1;
+    S.ordenes = [];
+    S.nextOrden = 1;
+    S.nextExpress = 1;
+    S.clientes = [];
+    S.comprobantes = [];
+    S.nextComp = 1;
+    S.turno = { abierto: true, desde: Date.now() - 3 * 3600000, apertura: 50000, usuario: "Silvia Rojas" };
+    S.usuarios = [
+      { id: 1, nombre: "Kevin Mora",    rol: "salonero", activo: true },
+      { id: 2, nombre: "Silvia Rojas",  rol: "caja",     activo: true },
+      { id: 3, nombre: "Rafael Núñez",  rol: "admin",    activo: true },
+      { id: 4, nombre: "Josué Blanco",  rol: "salonero", activo: false }
+    ];
+    S.nextUsuario = 5;
+    S.cert = { vence: Date.now() + 21 * 86400000, ambiente: "Sandbox" };
+    S.red = "ok";
+    semilla();
+    abrir("2",  [["Casado de pescado",1],["Agua embotellada",2]], 12, false);
+    abrir("4",  [["Olla de carne",2],["Imperial",3],["Tres leches",2]], 51, true);
+    abrir("5",  [["Chifrijo",2],["Imperial",2]], 6, false);
+    abrir("7",  [["Casado de pollo",2],["Ceviche",1],["Refresco natural",3]], 18, false);
+    abrir(null, [["Gallo pinto",1],["Café chorreado",1]], 4, false);
+  }
+
+  function abrir(mesa, defs, hace, cobrar) {
+    var o = {
+      id: S.nextOrden++,
+      num: mesa ? null : S.nextExpress++,
+      mesa: mesa,
+      lineas: [],
+      abierta: Date.now() - (hace || 0) * 60000,
+      cobrar: !!cobrar
+    };
+    (defs || []).forEach(function (d) {
+      var p = S.menu.filter(function (m) { return m.nombre === d[0]; })[0];
+      if (p) o.lineas.push({ nombre: p.nombre, precio: p.precio, iva: p.iva, qty: d[1] });
+    });
+    S.ordenes.push(o);
+    return o;
+  }
+
+  var canal = null;
+
+  function leerCompartido() {
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (!raw) return null;
+      var d = JSON.parse(raw);
+      if (!d || !d.menu || !d.menu.length) return null;
+      return d;
+    } catch (e) { return null; }
+  }
+
+  function comp(tipo, tit, defs, conServicio, medio, estado, motivo, haceMin) {
+    var lineas = [];
+    (defs || []).forEach(function (d) {
+      var p = S.menu.filter(function (m) { return m.nombre === d[0]; })[0];
+      if (p) lineas.push({ nombre: p.nombre, precio: p.precio, iva: p.iva, qty: d[1] });
+    });
+    var sub = 0, iva = 0;
+    lineas.forEach(function (l) { var m = l.precio * l.qty; sub += m; iva += m * (l.iva / 100); });
+    var svc = conServicio ? sub * 0.10 : 0;
+    var n = S.nextComp++;
+    var fecha = Date.now() - (haceMin || 0) * 60000;
+    var cons = consecutivoDe(tipo, n);
+    return {
+      id: n, tipo: tipo, cons: cons, clave: claveDe(cons, fecha, "1"), sit: "1", titulo: tit,
+      lineas: lineas, sub: sub, iva: iva, svc: svc, total: sub + iva + svc,
+      medio: medio, receptor: null, hacienda: estado, motivo: motivo || null, fecha: fecha
+    };
+  }
+
+  function semilla() {
+    var a = [
+      comp("TE", "Mesa 1",     [["Casado de pollo", 2], ["Refresco natural", 2]], true,  "Efectivo",    "aceptado",  null, 155),
+      comp("TE", "Mesa 6",     [["Olla de carne", 1], ["Imperial", 2]],           true,  "Tarjeta",     "aceptado",  null, 132),
+      comp("FE", "Mesa 3",     [["Casado de pescado", 4], ["Fresco de cas", 4]],  true,  "Tarjeta",     "aceptado",  null, 98),
+      comp("TE", "Express #1", [["Gallo pinto", 2], ["Café chorreado", 2]],       false, "SINPE Móvil", "aceptado",  null, 74),
+      comp("TE", "Express #2", [["Patacones", 2], ["Chicharrones", 1], ["Casado de pollo", 1]], false, "Efectivo", "aceptado", null, 62),
+      comp("TE", "Mesa 8",     [["Chifrijo", 3], ["Imperial", 4]],                true,  "Efectivo",    "rechazado", "Código CABYS inválido en la línea 2", 47),
+      comp("TE", "Mesa 2",     [["Ceviche", 2], ["Agua embotellada", 3]],         true,  "Efectivo",    "aceptado",  null, 31),
+      comp("FE", "Mesa 5",     [["Tres leches", 2], ["Café chorreado", 2]],       true,  "Tarjeta",     "enviando",  null, 4)
+    ];
+    a[2].receptor = { tipo: "02", id: "3101123456", nombre: "Comercializadora del Valle S.A.", actCod: "721101", correo: "compras@valle.cr" };
+    a[7].receptor = { tipo: "01", id: "108760543", nombre: "Carlos Ramírez Solís", actCod: "691001", correo: "carlos@bufete.cr" };
+    S.comprobantes = a.reverse();
+  }
+
+  function load() {
+    var d = leerCompartido();
+    if (!d) { seed(); save(); return; }
+    seedLocal();
+    CAMPOS.forEach(function (k) { S[k] = d[k]; });
+    if (!S.clientes) S.clientes = [];
+  }
+
+  function save() {
+    try {
+      var d = {};
+      CAMPOS.forEach(function (k) { d[k] = S[k]; });
+      localStorage.setItem(KEY, JSON.stringify(d));
+      if (canal) canal.postMessage(Date.now());
+    } catch (e) {}
+  }
+
+  // En el prototipo la sincronización va entre pestañas del mismo navegador.
+  // En el sistema real esto es el servidor empujando por WebSocket.
+  function sincronizar() {
+    var d = leerCompartido();
+    if (!d) return;
+    CAMPOS.forEach(function (k) { S[k] = d[k]; });
+    if (S.activa && !find(S.activa)) {
+      S.activa = null;
+      if (S.view === "pedido" || S.view === "pago") S.view = "salon";
+    }
+    render();
+  }
+
+  try {
+    canal = new BroadcastChannel("pos-cr");
+    canal.onmessage = function () { sincronizar(); };
+  } catch (e) {}
+  window.addEventListener("storage", function (e) {
+    if (e.key === KEY) sincronizar();
+  });
+
+  function go(v) { S.view = v; S.confirming = null; S.panel = null; S.motivo = null; S.verComanda = false; render(); }
+
+  function avisoEl() {
+    if (!S.aviso) return null;
+    var t = el("div", "toast" + (S.aviso.tono === "warn" ? " toast-warn" : ""));
+    t.appendChild(el("span", null, S.aviso.txt));
+    if (S.aviso.monto !== undefined) t.appendChild(el("span", "k", crc(S.aviso.monto)));
+    t.appendChild(el("div", "grow"));
+    if (S.aviso.monto !== undefined) {
+      if (S.aviso.espera) {
+        t.appendChild(el("span", "chip", "Guardado para transmitir"));
+      } else {
+        t.appendChild(el("span", S.aviso.listo ? "chip chip-ok" : "chip chip-live",
+          S.aviso.listo ? "Aceptado por Hacienda" : "Enviando a Hacienda…"));
+      }
+    }
+    return t;
+  }
+
+  function pendientes() {
+    return S.comprobantes.filter(function (c) { return c.hacienda === "pendiente"; });
+  }
+
+  // Al volver la conexión, la cola se vacía sola, uno por uno.
+  function drenar() {
+    var cola = pendientes();
+    if (!cola.length) return;
+    cola.forEach(function (c, i) {
+      setTimeout(function () {
+        if (redActual().id !== "ok") return;
+        var cc = S.comprobantes.filter(function (x) { return x.id === c.id; })[0];
+        if (!cc || cc.hacienda !== "pendiente") return;
+        cc.hacienda = "enviando";
+        save(); render();
+        setTimeout(function () {
+          var c2 = S.comprobantes.filter(function (x) { return x.id === c.id; })[0];
+          if (c2 && c2.hacienda === "enviando") { c2.hacienda = "aceptado"; save(); render(); }
+        }, 900);
+      }, 350 + i * 550);
+    });
+  }
+
+  function cambiarRed(id) {
+    S.red = id;
+    save(); render();
+    if (id === "ok") drenar();
+  }
+
+  var VIEWS = [
+    { id: "salon",   lab: "Salón" },
+    { id: "express", lab: "Express" },
+    { id: "pedido",  lab: "Pedido" },
+    { id: "pago",    lab: "Pago" }
+  ];
+
+  function el(tag, cls, txt) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (txt !== undefined) e.textContent = txt;
+    return e;
+  }
+
+  function rolActual() {
+    for (var i = 0; i < ROLES.length; i++) { if (ROLES[i].id === S.rol) return ROLES[i]; }
+    return ROLES[1];
+  }
+
+  function paintNav() {
+    var nav = document.getElementById("nav");
+    var r = rolActual();
+    nav.innerHTML = "";
+    VIEWS.forEach(function (v) {
+      if (r.views.indexOf(v.id) < 0) return;
+      var b = el("button", "navbtn", v.lab);
+      b.type = "button";
+      b.setAttribute("aria-current", S.view === v.id ? "true" : "false");
+      b.onclick = function () { go(v.id); };
+      nav.appendChild(b);
+    });
+    if (r.views.indexOf("menu") > -1) {
+      nav.appendChild(el("span", "navsep"));
+      var m = el("button", "navbtn", "Back-office");
+      m.type = "button";
+      m.setAttribute("aria-current", IDS_ADMIN.indexOf(S.view) > -1 ? "true" : "false");
+      m.onclick = function () { go("menu"); };
+      nav.appendChild(m);
+    }
+    nav.appendChild(el("div", "grow"));
+
+    var red = redActual();
+    var pend = pendientes().length;
+    if (red.id !== "ok" || pend) {
+      var nc = el("span", "netchip " + (red.id === "ok" ? "net-ok" : "net-off"));
+      nc.appendChild(el("span", "dot"));
+      nc.appendChild(el("span", null, red.id === "ok"
+        ? pend + " por transmitir"
+        : red.txt + (pend ? " · " + pend + " en cola" : "")));
+      nav.appendChild(nc);
+    }
+
+    var sel = el("select", "navrol");
+    sel.setAttribute("aria-label", "Dispositivo");
+    ROLES.forEach(function (x) {
+      var o = el("option", null, x.txt + " · " + x.sub);
+      o.value = x.id;
+      if (x.id === S.rol) o.selected = true;
+      sel.appendChild(o);
+    });
+    sel.onchange = function () {
+      S.rol = this.value;
+      try { sessionStorage.setItem(KEY_ROL, this.value); } catch (e) {}
+      if (rolActual().views.indexOf(S.view) < 0) S.view = "salon";
+      S.panel = null; S.verComanda = false;
+      render();
+    };
+    nav.appendChild(sel);
+  }
+
+  function hollow(h, p, btnLab, btnFn) {
+    var box = el("div", "hollow");
+    box.appendChild(el("h3", null, h));
+    box.appendChild(el("p", null, p));
+    if (btnLab) {
+      var b = el("button", "cta", btnLab);
+      b.type = "button"; b.onclick = btnFn;
+      box.appendChild(b);
+    }
+    return box;
+  }
+
+  function viewSalon(v) {
+    var ocup = S.ordenes.filter(function (o) { return o.mesa; }).length;
+    var bar = el("div", "bar");
+    var t = el("div");
+    t.appendChild(el("div", "bar-t", "Salón principal"));
+    t.appendChild(el("div", "bar-s", "Turno de Kevin · abierto 17:00"));
+    bar.appendChild(t);
+    bar.appendChild(el("div", "grow"));
+    bar.appendChild(el("span", "chip", ocup + " de " + MESAS.length + " ocupadas"));
+    v.appendChild(bar);
+
+    var av = avisoEl();
+    if (av) v.appendChild(av);
+
+    var g = el("div", "mesas");
+    MESAS.forEach(function (m) {
+      var o = ordenDeMesa(m);
+      var b = el("button", "mesa " + (o ? (o.cobrar ? "is-cobrar" : "is-ocupada") : "is-libre"));
+      b.type = "button";
+      b.appendChild(el("div", "mesa-n", m));
+      var st = el("div", "mesa-st");
+      if (o) {
+        st.appendChild(el("span", "dot"));
+        st.appendChild(el("span", null, (o.cobrar ? "Pide la cuenta" : "Comiendo") + " · " + mins(o.abierta) + " min"));
+      } else {
+        st.appendChild(el("span", null, "Libre"));
+      }
+      b.appendChild(st);
+      if (o) b.appendChild(el("div", "mesa-m", crc(totales(o).total)));
+      b.onclick = function () {
+        var cur = ordenDeMesa(m);
+        if (!cur) cur = abrir(m, [], 0, false);
+        S.activa = cur.id; S.view = "pedido"; save(); render();
+      };
+      g.appendChild(b);
+    });
+    v.appendChild(g);
+  }
+
+  function viewExpress(v) {
+    var abiertas = S.ordenes.filter(function (o) { return !o.mesa; });
+    var bar = el("div", "bar");
+    var t = el("div");
+    t.appendChild(el("div", "bar-t", "Express"));
+    t.appendChild(el("div", "bar-s", "Para llevar y mostrador · no ocupa mesa ni lleva servicio 10%"));
+    bar.appendChild(t);
+    bar.appendChild(el("div", "grow"));
+    bar.appendChild(el("span", "chip", abiertas.length + (abiertas.length === 1 ? " abierta" : " abiertas")));
+    v.appendChild(bar);
+
+    var av = avisoEl();
+    if (av) v.appendChild(av);
+
+    var g = el("div", "exps");
+    var nb = el("button", "exp exp-new");
+    nb.type = "button";
+    nb.appendChild(el("div", "exp-n", "Nueva orden"));
+    nb.appendChild(el("div", "exp-s", "Para llevar"));
+    nb.onclick = function () {
+      var o = abrir(null, [], 0, false);
+      S.activa = o.id; S.view = "pedido"; save(); render();
+    };
+    g.appendChild(nb);
+
+    abiertas.forEach(function (o) {
+      var b = el("button", "exp");
+      b.type = "button";
+      b.appendChild(el("div", "exp-n", "Express #" + o.num));
+      var st = el("div", "exp-s");
+      st.appendChild(el("span", "dot"));
+      st.appendChild(el("span", null, o.lineas.length + (o.lineas.length === 1 ? " línea" : " líneas") + " · " + mins(o.abierta) + " min"));
+      b.appendChild(st);
+      b.appendChild(el("div", "exp-m", crc(totales(o).total)));
+      b.onclick = function () { S.activa = o.id; S.view = "pedido"; save(); render(); };
+      g.appendChild(b);
+    });
+    v.appendChild(g);
+  }
+
+  function viewPedido(v) {
+    var o = find(S.activa);
+    if (!o) {
+      v.appendChild(hollow("No hay ninguna orden abierta",
+        "Elegí una mesa en el salón o arrancá una orden express para empezar a cargar platos.",
+        "Ir al salón", function () { go("salon"); }));
+      return;
+    }
+
+    var bar = el("div", "bar");
+    var back = el("button", "iconbtn iconbtn-back", "‹");
+    back.type = "button";
+    back.setAttribute("aria-label", o.mesa ? "Volver al salón" : "Volver a express");
+    back.onclick = function () { go(o.mesa ? "salon" : "express"); };
+    bar.appendChild(back);
+    var t = el("div");
+    t.appendChild(el("div", "bar-t", titulo(o)));
+    t.appendChild(el("div", "bar-s", (o.mesa ? "Servicio a mesa" : "Para llevar") + " · abierta hace " + mins(o.abierta) + " min · Kevin"));
+    bar.appendChild(t);
+    bar.appendChild(el("div", "grow"));
+    bar.appendChild(el("span", "chip", "Borrador"));
+    var more = el("button", "iconbtn", "⋯");
+    more.type = "button";
+    more.setAttribute("aria-label", "Opciones de la orden");
+    more.onclick = function () { S.panel = "opciones"; render(); };
+    bar.appendChild(more);
+    v.appendChild(bar);
+
+    if (S.panel === "opciones") { v.appendChild(panelOpciones(o)); return; }
+    if (S.panel === "mover")    { v.appendChild(panelMover(o)); return; }
+    if (S.panel === "anular")   { v.appendChild(panelAnular(o)); return; }
+
+    var tt = totales(o);
+    var sp = el("div", "split" + (S.verComanda ? " ver" : ""));
+    var left = el("div", "left");
+    var cats = [];
+    S.menu.forEach(function (m) { if (m.activo && cats.indexOf(m.cat) < 0) cats.push(m.cat); });
+    if (cats.indexOf(S.cat) < 0) S.cat = cats[0] || null;
+
+    var cb = el("div", "cats");
+    cats.forEach(function (c) {
+      var b = el("button", "cat", c);
+      b.type = "button";
+      b.setAttribute("aria-pressed", c === S.cat ? "true" : "false");
+      b.onclick = function () { S.cat = c; render(); };
+      cb.appendChild(b);
+    });
+    left.appendChild(cb);
+
+    var tb = el("div", "tiles");
+    var shown = S.menu.filter(function (m) { return m.activo && m.cat === S.cat; });
+    if (!shown.length) tb.appendChild(el("p", "empty", "No hay productos activos en esta categoría."));
+    shown.forEach(function (p) {
+      var b = el("button", "tile");
+      b.type = "button";
+      b.appendChild(el("span", "tile-n", p.nombre));
+      b.appendChild(el("span", "tile-p", crc(p.precio)));
+      b.onclick = function () {
+        for (var i = 0; i < o.lineas.length; i++) {
+          if (o.lineas[i].nombre === p.nombre && o.lineas[i].precio === p.precio) {
+            o.lineas[i].qty += 1; save(); render(); return;
+          }
+        }
+        o.lineas.push({ nombre: p.nombre, precio: p.precio, iva: p.iva, qty: 1 });
+        save(); render();
+      };
+      tb.appendChild(b);
+    });
+    left.appendChild(tb);
+
+    var mb = el("button", "mbar");
+    mb.type = "button";
+    mb.disabled = tt.sub === 0;
+    var cant = 0;
+    o.lineas.forEach(function (l) { cant += l.qty; });
+    mb.appendChild(el("span", null, cant ? cant + (cant === 1 ? " ítem" : " ítems") : "Comanda vacía"));
+    mb.appendChild(el("span", "grow"));
+    mb.appendChild(el("span", "n", crc(tt.total)));
+    mb.onclick = function () { S.verComanda = true; render(); };
+    left.appendChild(mb);
+    sp.appendChild(left);
+
+    var right = el("div", "right");
+    var bk = el("button", "mback", "‹ Volver a los platos");
+    bk.type = "button";
+    bk.onclick = function () { S.verComanda = false; render(); };
+    right.appendChild(bk);
+    var lb = el("div", "lines");
+    if (!o.lineas.length) lb.appendChild(el("p", "empty", "Tocá un plato para empezar la comanda."));
+    o.lineas.forEach(function (l, idx) {
+      var d = el("div", "ln");
+      d.appendChild(el("span", "ln-q", String(l.qty)));
+      d.appendChild(el("span", "ln-d", l.nombre));
+      d.appendChild(el("span", "ln-m", crc(l.precio * l.qty)));
+      var x = el("button", "iconbtn", "×");
+      x.type = "button";
+      x.setAttribute("aria-label", "Quitar uno de " + l.nombre);
+      x.onclick = function () {
+        l.qty -= 1;
+        if (l.qty <= 0) o.lineas.splice(idx, 1);
+        save(); render();
+      };
+      d.appendChild(x);
+      lb.appendChild(d);
+    });
+    right.appendChild(lb);
+
+    var tot = el("div", "tot");
+    tot.appendChild(rowOf("Subtotal", crc(tt.sub)));
+    tot.appendChild(rowOf("IVA", crc(tt.iva)));
+    if (o.mesa) tot.appendChild(rowOf("Servicio 10%", crc(tt.svc)));
+    var big = el("div", "big");
+    big.appendChild(el("span", "big-l", "Total"));
+    big.appendChild(el("span", "big-v", crc(tt.total)));
+    tot.appendChild(big);
+    var esSalonero = S.rol === "salonero";
+    var cb2 = el("button", "cta cta-full",
+      esSalonero ? (o.cobrar ? "Cancelar la petición" : "Pasar a caja") : "Cobrar");
+    cb2.type = "button";
+    cb2.disabled = tt.sub === 0;
+    if (esSalonero && o.cobrar) { cb2.style.background = "none"; cb2.style.border = "1px solid var(--line)"; cb2.style.color = "var(--muted)"; }
+    cb2.onclick = function () {
+      if (!esSalonero) { go("pago"); return; }
+      o.cobrar = !o.cobrar;
+      if (o.cobrar) {
+        S.aviso = { txt: titulo(o) + " pasó a caja · el cobro se hace allá", tono: "ok" };
+        S.view = o.mesa ? "salon" : "express";
+        save(); render();
+        setTimeout(function () { if (S.aviso && S.aviso.monto === undefined) { S.aviso = null; render(); } }, 4500);
+      } else { save(); render(); }
+    };
+    if (esSalonero && o.cobrar) {
+      var nota = el("p", "empty", "Esperando a caja.");
+      nota.style.textAlign = "center";
+      nota.style.marginTop = "8px";
+      tot.appendChild(cb2);
+      tot.appendChild(nota);
+    } else {
+      tot.appendChild(cb2);
+    }
+    right.appendChild(tot);
+    sp.appendChild(right);
+    v.appendChild(sp);
+  }
+
+  function panelHead(titulo, sub) {
+    var h = el("div", "panel-h");
+    h.appendChild(el("h3", null, titulo));
+    if (sub) h.appendChild(el("p", null, sub));
+    return h;
+  }
+
+  function panelOpciones(o) {
+    var p = el("div", "panel");
+    p.appendChild(panelHead("Opciones de " + titulo(o).toLowerCase(),
+      "Mientras la orden esté abierta no existe comprobante, así que nada de esto llega a Hacienda."));
+
+    var list = el("div", "opts-list");
+
+    var mv = el("button", "opt");
+    mv.type = "button";
+    mv.appendChild(el("span", "lab", o.mesa ? "Mover a otra mesa" : "Pasar a una mesa"));
+    mv.appendChild(el("span", "sub", o.mesa
+      ? "Cambiar de mesa, juntar con otra cuenta o pasarla a para llevar"
+      : "Sentar al cliente: se le empieza a cobrar el servicio 10%"));
+    mv.onclick = function () { S.panel = "mover"; render(); };
+    list.appendChild(mv);
+
+    var an = el("button", "opt opt-danger");
+    an.type = "button";
+    an.appendChild(el("span", "lab", "Anular la orden"));
+    an.appendChild(el("span", "sub", o.lineas.length
+      ? "Tiene " + o.lineas.length + (o.lineas.length === 1 ? " línea" : " líneas") + " cargadas · pide motivo"
+      : "Está vacía · se cierra sin más"));
+    an.onclick = function () { S.panel = "anular"; S.motivo = null; render(); };
+    list.appendChild(an);
+
+    p.appendChild(list);
+
+    var back = el("button", "ghost", "Volver a la comanda");
+    back.type = "button";
+    back.style.alignSelf = "flex-start";
+    back.onclick = function () { S.panel = null; render(); };
+    p.appendChild(back);
+    return p;
+  }
+
+  function panelMover(o) {
+    var p = el("div", "panel");
+    p.appendChild(panelHead("¿A dónde pasa " + titulo(o).toLowerCase() + "?",
+      "Si elegís una mesa ocupada, las dos cuentas se juntan en una sola."));
+
+    var g = el("div", "dests");
+
+    MESAS.forEach(function (m) {
+      if (o.mesa === m) return;
+      var otra = ordenDeMesa(m);
+      var b = el("button", "dest" + (otra ? " dest-merge" : ""));
+      b.type = "button";
+      b.appendChild(el("div", "dest-n", "Mesa " + m));
+      b.appendChild(el("div", "dest-s", otra
+        ? "Ocupada · juntar " + crc(totales(otra).total)
+        : "Libre"));
+      b.onclick = function () { mover(o, m); };
+      g.appendChild(b);
+    });
+
+    if (o.mesa) {
+      var ex = el("button", "dest");
+      ex.type = "button";
+      ex.appendChild(el("div", "dest-n", "Express"));
+      ex.appendChild(el("div", "dest-s", "Para llevar · quita el servicio 10%"));
+      ex.onclick = function () { mover(o, null); };
+      g.appendChild(ex);
+    }
+
+    p.appendChild(g);
+    var back = el("button", "ghost", "Cancelar");
+    back.type = "button";
+    back.style.alignSelf = "flex-start";
+    back.onclick = function () { S.panel = "opciones"; render(); };
+    p.appendChild(back);
+    return p;
+  }
+
+  function mover(o, destino) {
+    var desde = titulo(o);
+    var otra = destino ? ordenDeMesa(destino) : null;
+
+    if (otra) {
+      o.lineas.forEach(function (l) {
+        for (var i = 0; i < otra.lineas.length; i++) {
+          if (otra.lineas[i].nombre === l.nombre && otra.lineas[i].precio === l.precio) {
+            otra.lineas[i].qty += l.qty; return;
+          }
+        }
+        otra.lineas.push({ nombre: l.nombre, precio: l.precio, iva: l.iva, qty: l.qty });
+      });
+      otra.abierta = Math.min(otra.abierta, o.abierta);
+      S.ordenes = S.ordenes.filter(function (x) { return x.id !== o.id; });
+      S.activa = otra.id;
+      S.aviso = { txt: desde + " se juntó con mesa " + destino, tono: "warn" };
+    } else {
+      if (destino === null && o.mesa) { o.mesa = null; o.num = S.nextExpress++; }
+      else { o.mesa = destino; o.num = null; }
+      o.cobrar = false;
+      S.aviso = { txt: desde + " pasó a " + titulo(o).toLowerCase(), tono: "ok" };
+    }
+
+    S.panel = null;
+    save(); render();
+    setTimeout(function () { if (S.aviso && !S.aviso.monto) { S.aviso = null; render(); } }, 4000);
+  }
+
+  function panelAnular(o) {
+    var p = el("div", "panel");
+    var conLineas = o.lineas.length > 0;
+    p.appendChild(panelHead("Anular " + titulo(o).toLowerCase(),
+      conLineas
+        ? "Lleva " + crc(totales(o).total) + " cargados. No se emite nada a Hacienda, pero queda el registro de quién anuló y por qué."
+        : "La orden está vacía, no hay nada que justificar."));
+
+    if (conLineas) {
+      var m = el("div", "motivos");
+      MOTIVOS.forEach(function (t) {
+        var b = el("button", "motivo", t);
+        b.type = "button";
+        b.setAttribute("aria-pressed", S.motivo === t ? "true" : "false");
+        b.onclick = function () { S.motivo = t; render(); };
+        m.appendChild(b);
+      });
+      p.appendChild(m);
+    }
+
+    var acts = el("div", "form-act");
+    var go2 = el("button", "cta cta-danger", "Anular la orden");
+    go2.type = "button";
+    go2.disabled = conLineas && !S.motivo;
+    go2.onclick = function () { anular(o); };
+    acts.appendChild(go2);
+    var back = el("button", "ghost", "Cancelar");
+    back.type = "button";
+    back.onclick = function () { S.panel = "opciones"; S.motivo = null; render(); };
+    acts.appendChild(back);
+    if (conLineas && !S.motivo) acts.appendChild(el("span", "err", "Elegí un motivo para continuar."));
+    p.appendChild(acts);
+    return p;
+  }
+
+  function anular(o) {
+    var nombre = titulo(o);
+    var n = o.lineas.length;
+    var motivo = S.motivo;
+    var eraMesa = !!o.mesa;
+    S.ordenes = S.ordenes.filter(function (x) { return x.id !== o.id; });
+    S.activa = null;
+    S.panel = null;
+    S.motivo = null;
+    S.aviso = {
+      txt: nombre + " anulada" + (n ? " · " + n + (n === 1 ? " línea" : " líneas") + " · " + motivo : " · estaba vacía"),
+      tono: "warn"
+    };
+    S.view = eraMesa ? "salon" : "express";
+    save(); render();
+    setTimeout(function () { if (S.aviso && !S.aviso.monto) { S.aviso = null; render(); } }, 5000);
+  }
+
+  function tipoTxt(cod) {
+    for (var i = 0; i < TIPOS_ID.length; i++) { if (TIPOS_ID[i].cod === cod) return TIPOS_ID[i].txt; }
+    return cod;
+  }
+  function tipoPorLargo(id) {
+    if (id.length === 9) return "01";
+    if (id.length === 10) return "02";
+    if (id.length >= 11) return "03";
+    return "01";
+  }
+
+  function panelReceptor() {
+    var p = el("div", "panel");
+    p.appendChild(panelHead("Datos para la factura",
+      "Cualquier persona puede pedir factura, tenga o no actividad económica. Con la cédula se traen del padrón de Hacienda el nombre y las actividades; si no tiene ninguna, se factura como consumidor final."));
+
+    var q = el("div", "warn");
+    q.innerHTML = '<span aria-hidden="true">&#9888;</span><span><b>Punto abierto.</b> La 4.4 volvió obligatorio el código de actividad del receptor en los comprobantes que lo identifican, pero las fuentes consultadas no aclaran qué se envía cuando el receptor no tiene ninguna. Hay que resolverlo contra el XSD oficial antes de programar el XML.</span>';
+    p.appendChild(q);
+
+    if (S.clientes.length) {
+      var fw = el("div");
+      fw.appendChild(el("div", "lbl", "Clientes frecuentes"));
+      var fg = el("div", "freqs");
+      fg.style.marginTop = "8px";
+      S.clientes.forEach(function (c) {
+        var b = el("button", "freq", c.nombre);
+        b.type = "button";
+        b.onclick = function () { guardarReceptor(c); };
+        fg.appendChild(b);
+      });
+      fw.appendChild(fg);
+      p.appendChild(fw);
+    }
+
+    if (S.manual) {
+      p.appendChild(formManual());
+      return p;
+    }
+
+    var lk = el("div", "lookup");
+    var f = el("div", "f");
+    f.innerHTML = '<label for="f-ced">Cédula del cliente</label>' +
+      '<input id="f-ced" type="text" inputmode="numeric" maxlength="12" placeholder="3101123456">';
+    lk.appendChild(f);
+    var bb = el("button", "cta", "Buscar");
+    bb.type = "button";
+    bb.onclick = function () {
+      S.busca = (document.getElementById("f-ced").value || "").replace(/\D/g, "");
+      S.hallado = S.busca.length >= 9 ? (PADRON[S.busca] || "no") : null;
+      render();
+    };
+    lk.appendChild(bb);
+    p.appendChild(lk);
+    if (S.busca) { var i = f.querySelector("input"); i.value = S.busca; }
+
+    if (S.hallado === "no") {
+      var nf = el("div", "notfound");
+      nf.textContent = "La cédula " + S.busca + " no aparece en el padrón. Puede ser un extranjero no domiciliado o un no contribuyente.";
+      p.appendChild(nf);
+      var mb = el("button", "ghost", "Ingresar los datos a mano");
+      mb.type = "button";
+      mb.style.alignSelf = "flex-start";
+      mb.onclick = function () { S.manual = true; render(); };
+      p.appendChild(mb);
+    } else if (S.hallado) {
+      p.appendChild(fichaHallado(S.hallado));
+    }
+
+    var back = el("button", "ghost", "Cancelar");
+    back.type = "button";
+    back.style.alignSelf = "flex-start";
+    back.onclick = function () { S.panel = null; S.hallado = null; S.busca = ""; render(); };
+    p.appendChild(back);
+    return p;
+  }
+
+  function fichaHallado(h) {
+    var box = el("div");
+    box.style.display = "flex";
+    box.style.flexDirection = "column";
+    box.style.gap = "16px";
+
+    var fd = el("div", "found");
+    fd.appendChild(el("div", "nm", h.nombre));
+    fd.appendChild(el("div", "id", tipoTxt(h.tipo) + " · " + S.busca));
+    box.appendChild(fd);
+
+    var sinAct = h.acts.length === 0;
+    var actSel = h.acts.length === 1 ? h.acts[0] : null;
+
+    if (sinAct) {
+      var na = el("div", "notfound");
+      na.innerHTML = '<b>Sin actividad económica registrada.</b> Se factura como consumidor final: un asalariado o cualquier persona que pide el comprobante para un reembolso tiene el mismo derecho a su factura.';
+      box.appendChild(na);
+    } else {
+      var aw = el("div");
+      aw.appendChild(el("div", "lbl", h.acts.length === 1 ? "Actividad económica" : "Elegí la actividad económica"));
+      var al = el("div", "acts-list");
+      al.style.marginTop = "8px";
+      var btns = [];
+      h.acts.forEach(function (a) {
+        var b = el("button", "actv");
+        b.type = "button";
+        b.innerHTML = '<span class="cod"></span><span class="ds"></span>';
+        b.querySelector(".cod").textContent = a[0];
+        b.querySelector(".ds").textContent = a[1];
+        b.setAttribute("aria-pressed", actSel === a ? "true" : "false");
+        b.onclick = function () {
+          actSel = a;
+          btns.forEach(function (x) { x.setAttribute("aria-pressed", "false"); });
+          b.setAttribute("aria-pressed", "true");
+          err.style.display = "none";
+        };
+        btns.push(b);
+        al.appendChild(b);
+      });
+      aw.appendChild(al);
+      box.appendChild(aw);
+    }
+
+    var cf = el("div", "f");
+    cf.innerHTML = '<label for="f-mail">Correo para enviar la factura</label>' +
+      '<input id="f-mail" type="email" placeholder="cliente@empresa.com">' +
+      '<span class="hint">Obligatorio: hay que entregarle el XML firmado y la respuesta de Hacienda</span>';
+    box.appendChild(cf);
+
+    var err = el("p", "err", "");
+    err.style.display = "none";
+    box.appendChild(err);
+
+    var acts = el("div", "form-act");
+    var sv = el("button", "cta", "Usar estos datos");
+    sv.type = "button";
+    sv.onclick = function () {
+      var correo = (cf.querySelector("input").value || "").trim();
+      if (!sinAct && !actSel) { err.textContent = "Elegí la actividad económica del cliente."; err.style.display = "block"; return; }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(correo)) { err.textContent = "Escribí un correo válido para enviarle la factura."; err.style.display = "block"; return; }
+      guardarReceptor({
+        tipo: h.tipo, id: S.busca, nombre: h.nombre,
+        actCod: actSel ? actSel[0] : null,
+        actDesc: actSel ? actSel[1] : "Consumidor final",
+        correo: correo
+      });
+    };
+    acts.appendChild(sv);
+    box.appendChild(acts);
+    return box;
+  }
+
+  function formManual() {
+    var box = el("div");
+    box.style.display = "flex";
+    box.style.flexDirection = "column";
+    box.style.gap = "14px";
+
+    var fl = el("div", "fields");
+    fl.innerHTML =
+      '<div class="f"><label for="m-tipo">Tipo de identificación</label><select id="m-tipo"></select></div>' +
+      '<div class="f f-mono"><label for="m-id">Identificación</label><input id="m-id" type="text" maxlength="20"></div>' +
+      '<div class="f"><label for="m-nom">Nombre o razón social</label><input id="m-nom" type="text"></div>' +
+      '<div class="f f-mono"><label for="m-act">Código de actividad</label><input id="m-act" type="text" inputmode="numeric" maxlength="6" placeholder="962004"><span class="hint">Dejalo vacío si el cliente no tiene actividad económica</span></div>' +
+      '<div class="f"><label for="m-mail">Correo</label><input id="m-mail" type="email" placeholder="cliente@empresa.com"></div>';
+    var sel = fl.querySelector("#m-tipo");
+    TIPOS_ID.forEach(function (t) {
+      var o = el("option", null, t.txt);
+      o.value = t.cod;
+      if (t.cod === "05") o.selected = true;
+      sel.appendChild(o);
+    });
+    fl.querySelector("#m-id").value = S.busca || "";
+    box.appendChild(fl);
+
+    var err = el("p", "err", "");
+    err.style.display = "none";
+    box.appendChild(err);
+
+    var acts = el("div", "form-act");
+    var sv = el("button", "cta", "Usar estos datos");
+    sv.type = "button";
+    sv.onclick = function () {
+      var tipo = fl.querySelector("#m-tipo").value;
+      var id = fl.querySelector("#m-id").value.trim();
+      var nom = fl.querySelector("#m-nom").value.trim();
+      var act = fl.querySelector("#m-act").value.trim();
+      var correo = fl.querySelector("#m-mail").value.trim();
+      function fail(m) { err.textContent = m; err.style.display = "block"; }
+      if (!id) return fail("Escribí la identificación del cliente.");
+      if (!nom) return fail("Escribí el nombre o la razón social.");
+      if (act && !/^\d{6}$/.test(act)) return fail("El código de actividad económica lleva 6 dígitos, o dejalo vacío.");
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(correo)) return fail("Escribí un correo válido para enviarle la factura.");
+      guardarReceptor({
+        tipo: tipo, id: id, nombre: nom,
+        actCod: act || null,
+        actDesc: act ? "Ingresada a mano" : "Consumidor final",
+        correo: correo
+      });
+    };
+    acts.appendChild(sv);
+    var bk = el("button", "ghost", "Volver a buscar por cédula");
+    bk.type = "button";
+    bk.onclick = function () { S.manual = false; S.hallado = null; render(); };
+    acts.appendChild(bk);
+    box.appendChild(acts);
+    return box;
+  }
+
+  function guardarReceptor(r) {
+    S.receptor = r;
+    var ya = S.clientes.filter(function (c) { return c.id === r.id; }).length > 0;
+    if (!ya) S.clientes.unshift(r);
+    S.clientes = S.clientes.slice(0, 4);
+    S.opts["Necesita factura"] = true;
+    S.panel = null; S.hallado = null; S.busca = ""; S.manual = false;
+    save(); render();
+  }
+
+  function rowOf(k, val) {
+    var r = el("div", "row");
+    r.appendChild(el("span", null, k));
+    r.appendChild(el("span", null, val));
+    return r;
+  }
+
+  function viewPago(v) {
+    var o = find(S.activa);
+    if (!o || !o.lineas.length) {
+      v.appendChild(hollow("Nada que cobrar",
+        "Abrí una orden y cargale al menos un producto antes de pasar a cobrar.",
+        "Ir al salón", function () { go("salon"); }));
+      return;
+    }
+    var tt = totales(o);
+
+    var bar = el("div", "bar");
+    var back = el("button", "iconbtn iconbtn-back", "‹");
+    back.type = "button";
+    back.setAttribute("aria-label", "Volver al pedido");
+    back.onclick = function () { go("pedido"); };
+    bar.appendChild(back);
+    var t = el("div");
+    t.appendChild(el("div", "bar-t", "Cobrar " + titulo(o).toLowerCase()));
+    bar.appendChild(t);
+    v.appendChild(bar);
+
+    if (S.panel === "receptor") { v.appendChild(panelReceptor()); return; }
+
+    var c = el("div", "cobro");
+    var top = el("div", "cobro-top");
+    top.appendChild(el("span", "k", "Total a cobrar"));
+    top.appendChild(el("span", "v", crc(tt.total)));
+    c.appendChild(top);
+
+    var bd = el("div", "breakdown");
+    bd.appendChild(rowOf("Subtotal", crc(tt.sub)));
+    bd.appendChild(rowOf("IVA", crc(tt.iva)));
+    if (o.mesa) bd.appendChild(rowOf("Servicio 10%", crc(tt.svc)));
+    else bd.appendChild(rowOf("Servicio 10%", "no aplica"));
+    c.appendChild(bd);
+
+    var pays = el("div", "pays");
+    ["Efectivo", "Tarjeta", "SINPE Móvil"].forEach(function (m) {
+      var b = el("button", "pay", m);
+      b.type = "button";
+      b.setAttribute("aria-pressed", S.pago === m ? "true" : "false");
+      b.onclick = function () { S.pago = m; save(); render(); };
+      pays.appendChild(b);
+    });
+    c.appendChild(pays);
+
+    var secs = el("div", "secs");
+    var opts = o.mesa ? ["Dividir cuenta", "Agregar propina"] : ["Agregar propina"];
+    opts.forEach(function (k) {
+      var b = el("button", "tog", k);
+      b.type = "button";
+      b.setAttribute("aria-pressed", S.opts[k] ? "true" : "false");
+      b.onclick = function () { S.opts[k] = !S.opts[k]; save(); render(); };
+      secs.appendChild(b);
+    });
+    var fb = el("button", "tog", "Necesita factura");
+    fb.type = "button";
+    fb.setAttribute("aria-pressed", S.receptor ? "true" : "false");
+    fb.onclick = function () {
+      if (S.receptor) { S.receptor = null; S.opts["Necesita factura"] = false; save(); render(); }
+      else { S.panel = "receptor"; render(); }
+    };
+    secs.appendChild(fb);
+    c.appendChild(secs);
+
+    if (S.receptor) {
+      var sm = el("div", "sum");
+      var sb = el("div", "sum-b");
+      sb.appendChild(el("div", "nm", S.receptor.nombre));
+      sb.appendChild(el("div", "dt", tipoTxt(S.receptor.tipo) + " " + S.receptor.id +
+        (S.receptor.actCod ? " · act. " + S.receptor.actCod : " · consumidor final")));
+      sb.appendChild(el("div", "dt", S.receptor.correo));
+      sm.appendChild(sb);
+      var ed = el("button", "mini", "Cambiar");
+      ed.type = "button";
+      ed.onclick = function () { S.panel = "receptor"; render(); };
+      sm.appendChild(ed);
+      c.appendChild(sm);
+    }
+
+    var doc = S.receptor ? "factura" : "tiquete";
+    var go2 = el("button", "cta", "Cobrar y entregar " + doc);
+    go2.type = "button";
+    go2.style.maxWidth = "360px";
+    go2.style.margin = "0 auto";
+    go2.onclick = function () { cobrar(o, tt); };
+    c.appendChild(go2);
+    v.appendChild(c);
+  }
+
+  function cobrar(o, tt) {
+    var nombre = titulo(o);
+    var doc = S.receptor
+      ? "factura enviada a " + S.receptor.correo
+      : "tiquete entregado";
+
+    var r = redActual();
+    var enLinea = r.id === "ok";
+    var tipo = S.receptor ? "FE" : "TE";
+    var n = S.nextComp++;
+    var cons = consecutivoDe(tipo, n);
+    var c = {
+      id: n, tipo: tipo, cons: cons, clave: claveDe(cons, Date.now(), r.sit), sit: r.sit, titulo: nombre,
+      lineas: o.lineas.map(function (l) { return { nombre: l.nombre, precio: l.precio, iva: l.iva, qty: l.qty }; }),
+      sub: tt.sub, iva: tt.iva, svc: tt.svc, total: tt.total,
+      medio: S.pago, receptor: S.receptor, hacienda: enLinea ? "enviando" : "pendiente",
+      motivo: null, fecha: Date.now()
+    };
+    S.comprobantes.unshift(c);
+
+    S.ordenes = S.ordenes.filter(function (x) { return x.id !== o.id; });
+    S.activa = null;
+    S.opts = {};
+    S.receptor = null;
+    S.aviso = {
+      txt: nombre + " · " + doc,
+      monto: tt.total,
+      listo: false,
+      espera: !enLinea,
+      tono: enLinea ? "ok" : "warn"
+    };
+    S.view = "salon";
+    save(); render();
+    if (!enLinea) {
+      setTimeout(function () {
+        if (S.aviso && S.aviso.monto !== undefined) { S.aviso = null; render(); }
+      }, 6000);
+      return;
+    }
+    setTimeout(function () {
+      var cc = S.comprobantes.filter(function (x) { return x.id === c.id; })[0];
+      if (cc) cc.hacienda = "aceptado";
+      if (S.aviso && S.aviso.monto !== undefined) S.aviso.listo = true;
+      save(); render();
+    }, 2200);
+    setTimeout(function () {
+      if (S.aviso && S.aviso.monto !== undefined) { S.aviso = null; render(); }
+    }, 6000);
+  }
+
+  function subnavEl() {
+    var n = el("div", "subnav");
+    ADMIN.forEach(function (a) {
+      var b = el("button", "subbtn", a.lab);
+      b.type = "button";
+      b.setAttribute("aria-current", S.view === a.id ? "true" : "false");
+      b.onclick = function () { go(a.id); };
+      n.appendChild(b);
+    });
+    return n;
+  }
+
+  function adminBar(v, tit, sub) {
+    var bar = el("div", "bar");
+    var t = el("div");
+    t.appendChild(el("div", "bar-t", tit));
+    if (sub) t.appendChild(el("div", "bar-s", sub));
+    bar.appendChild(t);
+    bar.appendChild(el("div", "grow"));
+    bar.appendChild(el("span", "chip", "Administrador"));
+    v.appendChild(bar);
+    v.appendChild(subnavEl());
+    var av = avisoEl();
+    if (av) v.appendChild(av);
+  }
+
+  function kpi(k, val, s, cls) {
+    var b = el("div", "kpi" + (cls ? " " + cls : ""));
+    b.appendChild(el("div", "k", k));
+    b.appendChild(el("div", "v", val));
+    if (s) b.appendChild(el("div", "s", s));
+    return b;
+  }
+
+  function barras(datos, total) {
+    var l = el("div", "barlist");
+    datos.forEach(function (d) {
+      var r = el("div", "barrow");
+      r.appendChild(el("span", "nm", d[0]));
+      var tr = el("div", "tr");
+      var fl = el("div", "fl");
+      fl.style.width = (total > 0 ? Math.round(d[1] / total * 100) : 0) + "%";
+      tr.appendChild(fl);
+      r.appendChild(tr);
+      r.appendChild(el("span", "vl", d[2] !== undefined ? d[2] : crc(d[1])));
+      l.appendChild(r);
+    });
+    return l;
+  }
+
+  function ventasTurno() {
+    return S.comprobantes.filter(function (c) {
+      return S.turno.abierto && c.fecha >= S.turno.desde && c.hacienda !== "rechazado";
+    });
+  }
+
+  function viewCierre(v) {
+    adminBar(v, "Cierre de caja", S.turno.abierto
+      ? "Turno de " + S.turno.usuario + " · abierto desde las " + hora(S.turno.desde)
+      : "No hay turno abierto");
+
+    var a = el("div", "adm");
+
+    if (!S.turno.abierto) {
+      a.appendChild(hollow("La caja está cerrada",
+        "Abrí el turno con el monto inicial en efectivo para volver a registrar ventas.",
+        "Abrir caja con ₡50.000", function () {
+          S.turno = { abierto: true, desde: Date.now(), apertura: 50000, usuario: "Silvia Rojas" };
+          S.declarado = null; save(); render();
+        }));
+      v.appendChild(a);
+      return;
+    }
+
+    var vs = ventasTurno();
+    var porMedio = {}, total = 0, efectivo = 0, servicio = 0;
+    vs.forEach(function (c) {
+      porMedio[c.medio] = (porMedio[c.medio] || 0) + c.total;
+      total += c.total; servicio += c.svc;
+      if (c.medio === "Efectivo") efectivo += c.total;
+    });
+    var esperado = S.turno.apertura + efectivo;
+
+    var k = el("div", "kpis");
+    k.appendChild(kpi("Vendido en el turno", crc(total), vs.length + (vs.length === 1 ? " comprobante" : " comprobantes")));
+    k.appendChild(kpi("Efectivo esperado", crc(esperado), "apertura " + crc(S.turno.apertura)));
+    k.appendChild(kpi("Servicio 10%", crc(servicio), "es del personal, no del negocio"));
+    a.appendChild(k);
+
+    var medios = Object.keys(porMedio).map(function (m) { return [m, porMedio[m]]; });
+    if (medios.length) {
+      var s1 = el("div", "sec");
+      s1.appendChild(el("div", "lbl", "Por medio de pago"));
+      s1.appendChild(barras(medios, total));
+      a.appendChild(s1);
+    }
+
+    var s2 = el("div", "sec");
+    s2.appendChild(el("div", "lbl", "Arqueo"));
+    var arq = el("div", "arq");
+    var r1 = el("div", "arq-row");
+    r1.appendChild(el("span", null, "Fondo de apertura"));
+    r1.appendChild(el("span", null, crc(S.turno.apertura)));
+    arq.appendChild(r1);
+    var r2 = el("div", "arq-row");
+    r2.appendChild(el("span", null, "Ventas en efectivo"));
+    r2.appendChild(el("span", null, crc(efectivo)));
+    arq.appendChild(r2);
+    var r3 = el("div", "arq-row arq-tot");
+    r3.appendChild(el("span", null, "Debería haber en caja"));
+    r3.appendChild(el("span", null, crc(esperado)));
+    arq.appendChild(r3);
+
+    var f = el("div", "f f-mono");
+    f.innerHTML = '<label for="f-dec">Contado a mano</label><input id="f-dec" type="number" step="1" placeholder="' + esperado + '">';
+    arq.appendChild(f);
+
+    var dif = el("div", "arq-row arq-tot");
+    dif.appendChild(el("span", null, "Diferencia"));
+    var difV = el("span", null, "—");
+    dif.appendChild(difV);
+    arq.appendChild(dif);
+
+    var inp = f.querySelector("input");
+    if (S.declarado !== null) inp.value = S.declarado;
+    function calc() {
+      var d = parseInt(inp.value, 10);
+      if (isNaN(d)) { difV.textContent = "—"; difV.className = ""; return; }
+      var x = d - esperado;
+      difV.textContent = (x > 0 ? "+" : "") + crc(x);
+      difV.className = x === 0 ? "dif-ok" : "dif-bad";
+    }
+    inp.oninput = function () { S.declarado = this.value; calc(); };
+    calc();
+
+    var cerrar = el("button", "cta", "Cerrar la caja");
+    cerrar.type = "button";
+    cerrar.style.alignSelf = "flex-start";
+    cerrar.onclick = function () {
+      var d = parseInt(inp.value, 10);
+      if (isNaN(d)) { alertaInline(arq, "Contá el efectivo y anotá el monto antes de cerrar."); return; }
+      var x = d - esperado;
+      S.turno = { abierto: false, desde: S.turno.desde, apertura: S.turno.apertura, usuario: S.turno.usuario };
+      S.declarado = null;
+      S.aviso = {
+        txt: "Caja cerrada · " + (x === 0 ? "cuadró exacto" : (x > 0 ? "sobró " : "faltó ") + crc(Math.abs(x))),
+        tono: x === 0 ? "ok" : "warn"
+      };
+      save(); render();
+      setTimeout(function () { if (S.aviso && S.aviso.monto === undefined) { S.aviso = null; render(); } }, 5000);
+    };
+    arq.appendChild(cerrar);
+    s2.appendChild(arq);
+    a.appendChild(s2);
+    v.appendChild(a);
+  }
+
+  function alertaInline(cont, msg) {
+    var e = cont.querySelector(".err-inline");
+    if (!e) { e = el("p", "err err-inline"); cont.appendChild(e); }
+    e.textContent = msg;
+  }
+
+  function viewReportes(v) {
+    adminBar(v, "Reportes del día", "Lo que se vendió hoy y cuánto IVA se repercutió");
+    var a = el("div", "adm");
+
+    var vs = S.comprobantes.filter(function (c) { return c.hacienda !== "rechazado"; });
+    var total = 0, iva = 0, svc = 0;
+    var porTarifa = {}, porMedio = {}, porProd = {};
+    vs.forEach(function (c) {
+      total += c.total; iva += c.iva; svc += c.svc;
+      porMedio[c.medio] = (porMedio[c.medio] || 0) + c.total;
+      c.lineas.forEach(function (l) {
+        var m = l.precio * l.qty;
+        porTarifa[l.iva] = (porTarifa[l.iva] || 0) + m * (l.iva / 100);
+        porProd[l.nombre] = (porProd[l.nombre] || 0) + m;
+      });
+    });
+
+    var k = el("div", "kpis");
+    k.appendChild(kpi("Facturado", crc(total), vs.length + " comprobantes"));
+    k.appendChild(kpi("Ticket promedio", crc(vs.length ? total / vs.length : 0)));
+    k.appendChild(kpi("IVA repercutido", crc(iva), "a pagar a Hacienda"));
+    k.appendChild(kpi("Servicio 10%", crc(svc), "a repartir al personal"));
+    a.appendChild(k);
+
+    var tarifas = Object.keys(porTarifa).map(function (t) {
+      return [t === "0" ? "Exento" : t + "%", porTarifa[t]];
+    }).sort(function (x, y) { return y[1] - x[1]; });
+    var s0 = el("div", "sec");
+    s0.appendChild(el("div", "lbl", "IVA por tarifa"));
+    s0.appendChild(barras(tarifas, iva));
+    a.appendChild(s0);
+
+    var medios = Object.keys(porMedio).map(function (m) { return [m, porMedio[m]]; })
+      .sort(function (x, y) { return y[1] - x[1]; });
+    var s1 = el("div", "sec");
+    s1.appendChild(el("div", "lbl", "Por medio de pago"));
+    s1.appendChild(barras(medios, total));
+    a.appendChild(s1);
+
+    var prods = Object.keys(porProd).map(function (p) { return [p, porProd[p]]; })
+      .sort(function (x, y) { return y[1] - x[1]; }).slice(0, 6);
+    var s2 = el("div", "sec");
+    s2.appendChild(el("div", "lbl", "Lo que más se vendió"));
+    s2.appendChild(barras(prods, prods.length ? prods[0][1] : 0));
+    a.appendChild(s2);
+
+    v.appendChild(a);
+  }
+
+  function estadoChip(e) {
+    if (e === "aceptado") return el("span", "est est-ok", "Aceptado");
+    if (e === "enviando") return el("span", "est est-live", "Enviando…");
+    if (e === "pendiente") return el("span", "est est-wait", "En cola");
+    return el("span", "est est-bad", "Rechazado");
+  }
+
+  function sitTxt(s) {
+    if (s === "2") return "contingencia";
+    if (s === "3") return "sin internet";
+    return "normal";
+  }
+
+  function viewComprobantes(v) {
+    var malos = S.comprobantes.filter(function (c) { return c.hacienda === "rechazado"; }).length;
+    var pend = pendientes().length;
+    adminBar(v, "Comprobantes electrónicos",
+      pend ? pend + (pend === 1 ? " esperando transmisión" : " esperando transmisión")
+           : (malos ? malos + (malos === 1 ? " rechazado por Hacienda" : " rechazados por Hacienda") : "Todos al día con Hacienda"));
+    var a = el("div", "adm");
+
+    if (pend) {
+      var wp = el("div", "warn");
+      var sp = el("span");
+      sp.innerHTML = '<b>' + pend + (pend === 1 ? ' comprobante emitido sin llegar a Hacienda.' : ' comprobantes emitidos sin llegar a Hacienda.') +
+        '</b> Son válidos: se entregaron al cliente y llevan la situación marcada en la clave numérica. Se transmiten solos cuando vuelva la conexión.';
+      wp.innerHTML = '<span aria-hidden="true">&#9888;</span>';
+      wp.appendChild(sp);
+      a.appendChild(wp);
+
+      if (redActual().id === "ok") {
+        var tb2 = el("button", "cta", "Transmitir ahora");
+        tb2.type = "button";
+        tb2.style.alignSelf = "flex-start";
+        tb2.onclick = function () { drenar(); };
+        a.appendChild(tb2);
+      }
+    }
+
+    if (malos) {
+      var w = el("div", "warn");
+      w.innerHTML = '<span aria-hidden="true">&#9888;</span><span><b>Hay comprobantes rechazados.</b> Un comprobante rechazado consumió su consecutivo pero no tiene validez fiscal, y el cliente no lo puede usar para crédito. Hay que corregir la causa y reemitir.</span>';
+      a.appendChild(w);
+    }
+
+    var wrap = el("div", "tbl-wrap");
+    var tbl = el("table", "tbl");
+    tbl.innerHTML = '<thead><tr><th>Consecutivo</th><th>Tipo</th><th>Hora</th><th>Cliente</th>' +
+      '<th style="text-align:right">Total</th><th>Hacienda</th><th></th></tr></thead>';
+    var tb = el("tbody");
+
+    S.comprobantes.forEach(function (c) {
+      var tr = el("tr");
+      var td0 = el("td", "c", c.cons);
+      tr.appendChild(td0);
+      tr.appendChild(el("td", null, c.tipo === "FE" ? "Factura" : "Tiquete"));
+      tr.appendChild(el("td", null, hora(c.fecha)));
+      tr.appendChild(el("td", null, c.receptor ? c.receptor.nombre : c.titulo));
+      tr.appendChild(el("td", "n", crc(c.total)));
+      var tdE = el("td");
+      tdE.appendChild(estadoChip(c.hacienda));
+      tr.appendChild(tdE);
+
+      var tdA = el("td");
+      var acts = el("div", "acts");
+      if (c.hacienda === "rechazado") {
+        var rb = el("button", "mini", "Reintentar");
+        rb.type = "button";
+        rb.onclick = function () {
+          c.hacienda = "enviando"; c.motivo = null;
+          save(); render();
+          setTimeout(function () {
+            var cc = S.comprobantes.filter(function (x) { return x.id === c.id; })[0];
+            if (cc) { cc.hacienda = "aceptado"; save(); render(); }
+          }, 2000);
+        };
+        acts.appendChild(rb);
+      }
+      var vb = el("button", "mini", S.compSel === c.id ? "Ocultar" : "Ver");
+      vb.type = "button";
+      vb.onclick = function () { S.compSel = S.compSel === c.id ? null : c.id; render(); };
+      acts.appendChild(vb);
+      tdA.appendChild(acts);
+      tr.appendChild(tdA);
+      tb.appendChild(tr);
+
+      if (S.compSel === c.id) {
+        var tr2 = el("tr");
+        var td = el("td");
+        td.colSpan = 7;
+        var d = el("div", "sec");
+        d.style.padding = "4px 0 10px";
+        d.appendChild(el("div", "lbl", "Clave numérica (50 dígitos) · situación " + (c.sit || "1") + ": " + sitTxt(c.sit)));
+        d.appendChild(el("div", "det", c.clave));
+        if (c.receptor) {
+          d.appendChild(el("div", "lbl", "Receptor"));
+          d.appendChild(el("div", "det", c.receptor.nombre + " · " + c.receptor.id +
+            (c.receptor.actCod ? " · act. " + c.receptor.actCod : " · consumidor final") + " · " + c.receptor.correo));
+        }
+        if (c.motivo) {
+          var m = el("div", "warn");
+          m.style.marginTop = "6px";
+          m.innerHTML = '<span aria-hidden="true">&#9888;</span><span></span>';
+          m.querySelector("span:last-child").textContent = "Motivo del rechazo: " + c.motivo;
+          d.appendChild(m);
+        }
+        var ln = el("div", "lbl");
+        ln.textContent = "Líneas";
+        d.appendChild(ln);
+        c.lineas.forEach(function (l) {
+          d.appendChild(el("div", "det", l.qty + " × " + l.nombre + " · " + crc(l.precio * l.qty) +
+            " · IVA " + l.iva + "%"));
+        });
+        td.appendChild(d);
+        tr2.appendChild(td);
+        tb.appendChild(tr2);
+      }
+    });
+
+    tbl.appendChild(tb);
+    wrap.appendChild(tbl);
+    a.appendChild(wrap);
+    v.appendChild(a);
+  }
+
+  function viewAjustes(v) {
+    adminBar(v, "Ajustes", "Certificado digital y quién puede hacer qué");
+    var a = el("div", "adm");
+
+    var d = dias(S.cert.vence);
+    var k = el("div", "kpis");
+    k.appendChild(kpi("Certificado digital", d + " días", "vence el " + new Date(S.cert.vence).toLocaleDateString("es-CR"),
+      d < 30 ? "kpi-warn" : ""));
+    k.appendChild(kpi("Ambiente", S.cert.ambiente, S.cert.ambiente === "Sandbox" ? "pruebas, sin validez fiscal" : "producción", S.cert.ambiente === "Sandbox" ? "kpi-warn" : ""));
+    k.appendChild(kpi("Emisor", CEDULA_EMISOR, "cédula jurídica"));
+    a.appendChild(k);
+
+    if (d < 30) {
+      var w = el("div", "warn");
+      w.innerHTML = '<span aria-hidden="true">&#9888;</span><span><b>El certificado vence en ' + d + ' días.</b> Sin certificado vigente no se puede firmar ni transmitir: la facturación se detiene por completo. Renovarlo antes de la fecha, no el mismo día.</span>';
+      a.appendChild(w);
+    }
+
+    var top = el("div", "adm-top");
+    var nb = el("button", "cta", "Agregar usuario");
+    nb.type = "button";
+    nb.onclick = function () { S.usrNuevo = true; render(); };
+    top.appendChild(nb);
+    top.appendChild(el("span", "count", S.usuarios.length + " usuarios · " +
+      S.usuarios.filter(function (u) { return u.activo; }).length + " activos"));
+    a.appendChild(top);
+
+    if (S.usrNuevo) {
+      var box = el("div", "form");
+      box.innerHTML =
+        '<p class="form-h">Nuevo usuario</p>' +
+        '<div class="fields">' +
+          '<div class="f"><label for="u-nom">Nombre</label><input id="u-nom" type="text" placeholder="Ana Vargas"></div>' +
+          '<div class="f"><label for="u-rol">Rol</label><select id="u-rol"></select></div>' +
+        '</div>' +
+        '<p class="err" id="u-err" style="display:none"></p>' +
+        '<div class="form-act"><button class="cta" type="button" id="u-save">Guardar</button>' +
+        '<button class="ghost" type="button" id="u-cancel">Cancelar</button></div>';
+      var us = box.querySelector("#u-rol");
+      ROLES.forEach(function (r) {
+        var o = el("option", null, r.txt);
+        o.value = r.id;
+        us.appendChild(o);
+      });
+      box.querySelector("#u-cancel").onclick = function () { S.usrNuevo = false; render(); };
+      box.querySelector("#u-save").onclick = function () {
+        var nom = box.querySelector("#u-nom").value.trim();
+        if (!nom) {
+          box.querySelector("#u-err").textContent = "Escribí el nombre de la persona.";
+          box.querySelector("#u-err").style.display = "block";
+          return;
+        }
+        S.usuarios.push({ id: S.nextUsuario++, nombre: nom, rol: us.value, activo: true });
+        S.usrNuevo = false; save(); render();
+      };
+      a.appendChild(box);
+    }
+
+    var wrap = el("div", "tbl-wrap");
+    var tbl = el("table", "tbl");
+    tbl.innerHTML = '<thead><tr><th>Persona</th><th>Rol</th><th>Puede</th><th></th></tr></thead>';
+    var tb = el("tbody");
+    S.usuarios.forEach(function (u) {
+      var tr = el("tr", u.activo ? "" : "off");
+      var td1 = el("td", null, u.nombre);
+      if (!u.activo) {
+        var off = el("span", "chip", "Inactivo");
+        off.style.marginLeft = "8px";
+        td1.appendChild(off);
+      }
+      tr.appendChild(td1);
+
+      var tdR = el("td");
+      var sel = el("select");
+      sel.style.fontSize = "13px";
+      sel.style.padding = "6px 9px";
+      sel.style.border = "1px solid var(--line)";
+      sel.style.borderRadius = "8px";
+      sel.style.background = "var(--paper)";
+      sel.style.color = "var(--ink)";
+      ROLES.forEach(function (r) {
+        var o = el("option", null, r.txt);
+        o.value = r.id;
+        if (r.id === u.rol) o.selected = true;
+        sel.appendChild(o);
+      });
+      sel.onchange = function () { u.rol = this.value; save(); render(); };
+      tdR.appendChild(sel);
+      tr.appendChild(tdR);
+
+      var r = ROLES.filter(function (x) { return x.id === u.rol; })[0];
+      var puede = r.id === "salonero" ? "Tomar pedidos" : (r.id === "caja" ? "Tomar y cobrar" : "Todo, incluido precios");
+      tr.appendChild(el("td", null, puede));
+
+      var tdA = el("td");
+      var acts = el("div", "acts");
+      var tg = el("button", "mini", u.activo ? "Desactivar" : "Activar");
+      tg.type = "button";
+      tg.onclick = function () { u.activo = !u.activo; save(); render(); };
+      acts.appendChild(tg);
+      tdA.appendChild(acts);
+      tr.appendChild(tdA);
+      tb.appendChild(tr);
+    });
+    tbl.appendChild(tb);
+    wrap.appendChild(tbl);
+    a.appendChild(wrap);
+
+    var nota = el("p", "cbx-none");
+    nota.textContent = "En el prototipo el rol se cambia con el selector de arriba. En el sistema real viene del usuario que inició sesión: la tablet no es de nadie, el salonero es quien está logueado en ella.";
+    a.appendChild(nota);
+
+    v.appendChild(a);
+  }
+
+  function viewMenu(v) {
+    adminBar(v, "Productos y servicios", "Lo que el negocio vende, con su clasificación fiscal");
+
+    var a = el("div", "adm");
+    var w = el("div", "warn");
+    w.innerHTML = '<span aria-hidden="true">&#9888;</span><span><b>El catálogo aquí es una muestra de 14 códigos inventados.</b> El real trae más de 20 mil y se consulta en <span style="font-family:var(--num)">api.hacienda.go.cr/fe/cabys</span>. La tarifa de IVA la fija el código: por eso no hay un campo para elegirla.</span>';
+    a.appendChild(w);
+
+    var top = el("div", "adm-top");
+    var nb = el("button", "cta", "Agregar producto");
+    nb.type = "button";
+    nb.onclick = function () { S.editing = "new"; S.confirming = null; render(); };
+    top.appendChild(nb);
+    var act = S.menu.filter(function (i) { return i.activo; }).length;
+    top.appendChild(el("span", "count", S.menu.length + (S.menu.length === 1 ? " producto" : " productos") + " · " + act + " activos"));
+    top.appendChild(el("div", "grow"));
+    var rb = el("button", "ghost", "Restaurar todo");
+    rb.type = "button";
+    rb.onclick = function () { seed(); save(); render(); };
+    top.appendChild(rb);
+    a.appendChild(top);
+
+    if (S.editing !== null) a.appendChild(formEl());
+
+    var wrap = el("div", "tbl-wrap");
+    var tbl = el("table", "tbl");
+    tbl.innerHTML = '<thead><tr><th>Producto</th><th>Categoría</th><th>CABYS</th><th>IVA</th>' +
+      '<th style="text-align:right">Precio</th><th></th></tr></thead>';
+    var tb = el("tbody");
+
+    S.menu.forEach(function (p) {
+      var tr = el("tr", p.activo ? "" : "off");
+      var td1 = el("td", null, p.nombre);
+      if (!p.activo) {
+        var off = el("span", "chip", "Inactivo");
+        off.style.marginLeft = "8px";
+        td1.appendChild(off);
+      }
+      tr.appendChild(td1);
+      tr.appendChild(el("td", null, p.cat));
+      tr.appendChild(el("td", "c", p.cabys));
+      tr.appendChild(el("td", null, tarifaTxt(p.iva)));
+      tr.appendChild(el("td", "n", crc(p.precio)));
+
+      var td6 = el("td");
+      if (S.confirming === p.id) {
+        var cf = el("div", "confirm");
+        cf.appendChild(el("span", null, "¿Borrar?"));
+        var yes = el("button", "mini mini-yes", "Sí, borrar");
+        yes.type = "button";
+        yes.onclick = function () {
+          S.menu = S.menu.filter(function (i) { return i.id !== p.id; });
+          S.confirming = null;
+          if (S.editing === p.id) S.editing = null;
+          save(); render();
+        };
+        var no = el("button", "mini", "Cancelar");
+        no.type = "button";
+        no.onclick = function () { S.confirming = null; render(); };
+        cf.appendChild(yes); cf.appendChild(no);
+        td6.appendChild(cf);
+      } else {
+        var acts = el("div", "acts");
+        var tg = el("button", "mini", p.activo ? "Desactivar" : "Activar");
+        tg.type = "button";
+        tg.onclick = function () { p.activo = !p.activo; save(); render(); };
+        var ed = el("button", "mini", "Editar");
+        ed.type = "button";
+        ed.onclick = function () { S.editing = p.id; S.confirming = null; render(); };
+        var dl = el("button", "mini mini-del", "Borrar");
+        dl.type = "button";
+        dl.onclick = function () { S.confirming = p.id; render(); };
+        acts.appendChild(tg); acts.appendChild(ed); acts.appendChild(dl);
+        td6.appendChild(acts);
+      }
+      tr.appendChild(td6);
+      tb.appendChild(tr);
+    });
+
+    tbl.appendChild(tb);
+    wrap.appendChild(tbl);
+    a.appendChild(wrap);
+    v.appendChild(a);
+  }
+
+  function tarifaTxt(val) {
+    for (var i = 0; i < TARIFAS.length; i++) { if (TARIFAS[i].tarifa === val) return TARIFAS[i].txt; }
+    return val + "%";
+  }
+
+  function formEl() {
+    var isNew = S.editing === "new";
+    var p = isNew ? { nombre: "", cat: "", precio: "", cabys: "", iva: 13 }
+                  : S.menu.filter(function (i) { return i.id === S.editing; })[0];
+    if (!p) { S.editing = null; return el("div"); }
+
+    var box = el("div", "form");
+    box.innerHTML =
+      '<p class="form-h"></p>' +
+      '<div class="fields">' +
+        '<div class="f"><label for="f-nom">Nombre</label><input id="f-nom" type="text" placeholder="Casado de pollo"></div>' +
+        '<div class="f"><label for="f-cat">Categoría</label><input id="f-cat" type="text" list="cat-list" placeholder="Platos"><datalist id="cat-list"></datalist></div>' +
+        '<div class="f f-mono"><label for="f-pre">Precio en colones</label><input id="f-pre" type="number" min="0" step="1" placeholder="5900"></div>' +
+      '</div>' +
+      '<div class="cbx">' +
+        '<label class="lbl" for="f-cab">Clasificación CABYS</label>' +
+        '<input id="f-cab" type="text" placeholder="Buscá por descripción: arroz, comidas, bebidas…">' +
+        '<div class="cbx-res" id="f-res"></div>' +
+        '<div id="f-sel"></div>' +
+      '</div>' +
+      '<p class="err" id="f-err" style="display:none"></p>' +
+      '<div class="form-act"><button class="cta" type="button" id="f-save">Guardar</button>' +
+      '<button class="ghost" type="button" id="f-cancel">Cancelar</button></div>';
+
+    box.querySelector(".form-h").textContent = isNew ? "Nuevo producto" : "Editando " + p.nombre;
+
+    var dl = box.querySelector("#cat-list");
+    var all = [];
+    S.menu.forEach(function (i) { if (all.indexOf(i.cat) < 0) all.push(i.cat); });
+    all.forEach(function (c) { var o = el("option"); o.value = c; dl.appendChild(o); });
+
+    box.querySelector("#f-nom").value = p.nombre;
+    box.querySelector("#f-cat").value = p.cat;
+    box.querySelector("#f-pre").value = p.precio === "" ? "" : p.precio;
+
+    var elegido = null;
+    for (var i = 0; i < CABYS.length; i++) { if (CABYS[i][0] === p.cabys) elegido = CABYS[i]; }
+    var ivaFinal = elegido ? (isNew ? elegido[2] : p.iva) : null;
+    var ajustando = false;
+
+    var res = box.querySelector("#f-res");
+    var selBox = box.querySelector("#f-sel");
+    var err = box.querySelector("#f-err");
+
+    function pintaSel() {
+      selBox.innerHTML = "";
+      if (!elegido) {
+        selBox.appendChild(el("p", "cbx-none", "Sin clasificar. De este código sale la tarifa de IVA del producto."));
+        return;
+      }
+      var s = el("div", "cbx-sel");
+      s.appendChild(el("div", "cd", elegido[0]));
+      s.appendChild(el("div", "ds", elegido[1]));
+
+      var distinta = ivaFinal !== elegido[2];
+      var tf = el("div", "tf", distinta
+        ? "IVA " + ivaFinal + "% · ajustado (el catálogo sugiere " + elegido[2] + "%)"
+        : "IVA " + ivaFinal + "% · según el catálogo");
+      if (distinta) tf.style.color = "var(--amber)";
+      s.appendChild(tf);
+
+      if (!ajustando) {
+        var ab = el("button", "mini", "Ajustar la tarifa");
+        ab.type = "button";
+        ab.style.alignSelf = "flex-start";
+        ab.style.marginTop = "6px";
+        ab.onclick = function () { ajustando = true; pintaSel(); };
+        s.appendChild(ab);
+      } else {
+        var wrap = el("div");
+        wrap.style.marginTop = "8px";
+        wrap.style.display = "flex";
+        wrap.style.flexDirection = "column";
+        wrap.style.gap = "6px";
+        var sel = el("select");
+        TARIFAS.forEach(function (t) {
+          var o = el("option", null, t.txt);
+          o.value = String(t.tarifa);
+          if (t.tarifa === ivaFinal) o.selected = true;
+          sel.appendChild(o);
+        });
+        sel.onchange = function () { ivaFinal = parseInt(this.value, 10); };
+        wrap.appendChild(sel);
+        wrap.appendChild(el("span", "hint", "La tarifa del catálogo es de referencia. Si la corregís, la responsabilidad de que sea la correcta es del contribuyente, no de Hacienda."));
+        var ok = el("button", "mini", "Listo");
+        ok.type = "button";
+        ok.style.alignSelf = "flex-start";
+        ok.onclick = function () { ajustando = false; pintaSel(); };
+        wrap.appendChild(ok);
+        s.appendChild(wrap);
+      }
+      selBox.appendChild(s);
+    }
+
+    function buscar(q) {
+      res.innerHTML = "";
+      q = (q || "").trim().toLowerCase();
+      if (q.length < 3) return;
+      var hits = CABYS.filter(function (c) {
+        return c[0].indexOf(q) === 0 || c[1].toLowerCase().indexOf(q) > -1;
+      }).slice(0, 6);
+      if (!hits.length) {
+        res.appendChild(el("p", "cbx-none", "Nada en el catálogo con “" + q + "”."));
+        return;
+      }
+      hits.forEach(function (c) {
+        var b = el("button", "cbx-it");
+        b.type = "button";
+        b.innerHTML = '<span class="cd"></span><span class="ds"></span><span class="tf"></span>';
+        b.querySelector(".cd").textContent = c[0];
+        b.querySelector(".ds").textContent = c[1];
+        b.querySelector(".tf").textContent = c[2] === 0 ? "Exento" : "IVA " + c[2] + "%";
+        b.onclick = function () {
+          elegido = c;
+          ivaFinal = c[2];
+          ajustando = false;
+          box.querySelector("#f-cab").value = "";
+          res.innerHTML = "";
+          err.style.display = "none";
+          pintaSel();
+        };
+        res.appendChild(b);
+      });
+    }
+
+    box.querySelector("#f-cab").oninput = function () { buscar(this.value); };
+    pintaSel();
+
+    box.querySelector("#f-cancel").onclick = function () { S.editing = null; render(); };
+    box.querySelector("#f-save").onclick = function () {
+      var nom = box.querySelector("#f-nom").value.trim();
+      var cat = box.querySelector("#f-cat").value.trim();
+      var pre = parseInt(box.querySelector("#f-pre").value, 10);
+      function fail(m) { err.textContent = m; err.style.display = "block"; }
+
+      if (!nom) return fail("Escribí el nombre del producto.");
+      if (!cat) return fail("Escribí una categoría, por ejemplo Platos o Bebidas.");
+      if (!(pre > 0)) return fail("El precio tiene que ser mayor que cero.");
+      if (!elegido) return fail("Elegí la clasificación CABYS: de ahí sale la tarifa de IVA.");
+
+      if (isNew) {
+        S.menu.push({ id: S.nextMenuId++, nombre: nom, cat: cat, precio: pre, cabys: elegido[0], iva: ivaFinal, activo: true });
+      } else {
+        p.nombre = nom; p.cat = cat; p.precio = pre; p.cabys = elegido[0]; p.iva = ivaFinal;
+      }
+      S.editing = null;
+      save(); render();
+    };
+    return box;
+  }
+
+  function paintSim() {
+    var s = document.getElementById("sim");
+    s.innerHTML = "";
+    s.appendChild(el("span", "lb", "Simulador"));
+    REDES.forEach(function (r) {
+      var b = el("button", "simb", r.txt);
+      b.type = "button";
+      b.setAttribute("aria-pressed", S.red === r.id ? "true" : "false");
+      b.onclick = function () { cambiarRed(r.id); };
+      s.appendChild(b);
+    });
+    s.appendChild(el("p", "nota", redActual().desc + " No es parte del producto: sirve para ver cómo se comporta el sistema cuando se cae la conexión."));
+  }
+
+  function render() {
+    if (rolActual().views.indexOf(S.view) < 0) S.view = "salon";
+    paintSim();
+    paintNav();
+    var v = document.getElementById("view");
+    v.innerHTML = "";
+    if (S.view === "salon") viewSalon(v);
+    else if (S.view === "express") viewExpress(v);
+    else if (S.view === "pedido") viewPedido(v);
+    else if (S.view === "pago") viewPago(v);
+    else if (S.view === "cierre") viewCierre(v);
+    else if (S.view === "reportes") viewReportes(v);
+    else if (S.view === "comprobantes") viewComprobantes(v);
+    else if (S.view === "ajustes") viewAjustes(v);
+    else viewMenu(v);
+  }
+
+  load();
+  render();
+
+  // Los que quedaron en vuelo al abrir la página aterrizan solos.
+  setTimeout(function () {
+    var hay = false;
+    S.comprobantes.forEach(function (c) {
+      if (c.hacienda === "enviando") { c.hacienda = "aceptado"; hay = true; }
+    });
+    if (hay) { save(); render(); }
+  }, 3000);
+</script>

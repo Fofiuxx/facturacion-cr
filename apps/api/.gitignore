@@ -1,0 +1,10 @@
+﻿node_modules/
+*.db
+*.db-wal
+*.db-shm
+certs/
+
+# Los respaldos son bases comprimidas: *.db no los atrapa porque
+# terminan en .gz, y llevan comprobantes dentro.
+respaldos/
+*.gz

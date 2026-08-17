@@ -1,0 +1,9 @@
+node_modules/
+
+# Ninguna llave real entra al repositorio. Las de prueba tampoco hacen falta:
+# se regeneran con openssl (ver README).
+*.p12
+*.pem
+*.key
+
+salida-*.xml
